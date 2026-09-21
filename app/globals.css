@@ -30,6 +30,17 @@
   /* Heart rate sprite's icon. */
   --color-heartbeat: #eb4417;
 
+  /* Line-art figure section below the hero. A deeper ground than the hero's
+     gradient, with hairline strokes that sit only just above it. */
+  --color-figure-ground: #0f1219;
+  --color-figure-rule: #1e2430;
+  --color-figure-line: #566173;
+  --color-figure-line-bright: #8895a8;
+  --color-figure-line-dim: #3b4351;
+  --color-figure-label: #5560747a;
+  --color-figure-body: #8c97a8;
+  --color-figure-accent: #5eead4;
+
   /* Soft, far-throw elevation for the hero call to action. */
   --shadow-cta:
     0 186px 52px rgb(0 0 0 / 0), 0 119px 48px rgb(0 0 0 / 0.01),
@@ -73,6 +84,48 @@
      the rest of the cycle at rest. Consumers override the duration to match
      the beats per minute they display. */
   --animate-heartbeat: heartbeat 1s ease-in-out infinite;
+
+  /* Figure illustrations: devices hover, a pulse runs down each link, and the
+     platform acknowledges it as it lands. Durations and delays are supplied
+     per element so the three links stay out of phase. */
+  @keyframes figure-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes figure-pulse {
+    0% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    10% {
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(var(--pulse-drop));
+    }
+  }
+
+  @keyframes figure-landing {
+    0% {
+      opacity: 0.55;
+      transform: scale(0.35);
+    }
+    60%,
+    100% {
+      opacity: 0;
+      transform: scale(1);
+    }
+  }
 
   @keyframes heartbeat {
     0%,

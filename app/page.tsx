@@ -1,11 +1,14 @@
 import { BrandLockup } from "@/components/marketing/atoms/brand-lockup";
 import { FootstepsIcon } from "@/components/marketing/atoms/footsteps-icon";
+import { ConnectPlatformVisual } from "@/components/marketing/atoms/connect-platform-visual";
 import { HeroMedia } from "@/components/marketing/atoms/hero-media";
 import { RollingFigure } from "@/components/marketing/atoms/rolling-figure";
 import { TickingFigure } from "@/components/marketing/atoms/ticking-figure";
 import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
 import type { NavLink } from "@/components/marketing/molecules/nav-links";
 import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
+import { CalloutCard } from "@/components/marketing/molecules/callout-card";
+import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
 import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
@@ -38,6 +41,28 @@ const STEP_BEAT_MS = 900;
 
 /** Where the heart rate workout starts and returns to. */
 const RESTING_BPM = 58;
+
+/**
+ * Callouts below the hero. Only the first is written; the other two are
+ * placeholders until their copy and animation briefs land.
+ */
+const CALLOUTS = {
+  connect: {
+    figure: "0.1",
+    title: "Connect your health records and wearables",
+    body: "Pull records, labs and every device you already wear into one place, so nothing about your health lives in a silo.",
+  },
+  second: {
+    figure: "0.2",
+    title: "Second callout",
+    body: "Placeholder — awaiting copy and an animation brief.",
+  },
+  third: {
+    figure: "0.3",
+    title: "Third callout",
+    body: "Placeholder — awaiting copy and an animation brief.",
+  },
+} as const;
 
 const classes = {
   page: "relative w-full",
@@ -74,6 +99,26 @@ const LandingPage = () => (
       }
       subheadline={HERO.subheadline}
     />
+    <CalloutSection>
+      <CalloutCard
+        body={CALLOUTS.connect.body}
+        figure={CALLOUTS.connect.figure}
+        title={CALLOUTS.connect.title}
+        visual={<ConnectPlatformVisual />}
+      />
+      <CalloutCard
+        body={CALLOUTS.second.body}
+        figure={CALLOUTS.second.figure}
+        title={CALLOUTS.second.title}
+        visual={null}
+      />
+      <CalloutCard
+        body={CALLOUTS.third.body}
+        figure={CALLOUTS.third.figure}
+        title={CALLOUTS.third.title}
+        visual={null}
+      />
+    </CalloutSection>
   </main>
 );
 
