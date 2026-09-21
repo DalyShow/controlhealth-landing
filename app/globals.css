@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@source "../components/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
+
+/*
+ * Control Health marketing tokens. This is the subset the landing page uses,
+ * lifted from packages/design-system/styles/globals.css in website-service.
+ */
+:root {
+  --background: oklch(97.49% 0.0125 35.73);
+  --foreground: oklch(21.83% 0.034 273.18);
+  --primary: #15192a;
+  --primary-foreground: #fafafa;
+  --radius: 0.5rem;
+}
+
+@theme {
+  /* Marketing hero — dark gradient surface, sampled from the
+     Control Health Marketing Site Figma (node 1259:1266). */
+  --color-hero-gradient-from: #1f2937;
+  --color-hero-gradient-to: #4b5a6e;
+
+  /* Waveform graphic: bars sit in cool slate and light to white on rollover. */
+  --color-waveform-slate: #94a3b8;
+
+  /* Verdant — positive-trend accent used by the stat sprites. */
+  --color-verdant-100: #e6f5ef;
+
+  /* Heart rate sprite's icon. */
+  --color-heartbeat: #eb4417;
+
+  /* Soft, far-throw elevation for the hero call to action. */
+  --shadow-cta:
+    0 186px 52px rgb(0 0 0 / 0), 0 119px 48px rgb(0 0 0 / 0.01),
+    0 67px 40px rgb(0 0 0 / 0.05), 0 30px 30px rgb(0 0 0 / 0.09),
+    0 7px 16px rgb(0 0 0 / 0.1);
+
+  /* Upward glow lifting the waveform off the hero surface. */
+  --drop-shadow-waveform:
+    0 -72px 10px rgb(26 34 46 / 0), 0 -46px 9px rgb(26 34 46 / 0.03),
+    0 -26px 8px rgb(26 34 46 / 0.1), 0 -11px 6px rgb(26 34 46 / 0.16),
+    0 -3px 3px rgb(26 34 46 / 0.19);
+}
+
+@theme inline {
+  --gradient-hero: linear-gradient(
+    57.765deg,
+    var(--color-hero-gradient-from) 2.69%,
+    var(--color-hero-gradient-to) 99.18%
+  );
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: oklch(70.8% 0 89.88);
+  --color-destructive: oklch(58.331% 0.2388 28.49);
+  --color-accent: oklch(97% 0 89.88);
+  --color-accent-foreground: oklch(20.5% 0 89.88);
+  --color-secondary: oklch(89.923% 0.0536 35.36);
+  --color-secondary-foreground: oklch(20.5% 0 89.88);
+  --color-input: oklch(92.2% 0 89.88);
+  --color-border: oklch(92.2% 0 89.88);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-playfair);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Lub-dub: a strong contraction, a weaker second one just behind it, then
+     the rest of the cycle at rest. Consumers override the duration to match
+     the beats per minute they display. */
+  --animate-heartbeat: heartbeat 1s ease-in-out infinite;
+
+  @keyframes heartbeat {
+    0%,
+    34%,
+    100% {
+      scale: 1;
+    }
+    8% {
+      scale: 1.18;
+    }
+    16% {
+      scale: 1.02;
+    }
+    24% {
+      scale: 1.12;
+    }
+  }
+}
+
+@utility bg-hero-gradient {
+  background-image: var(--gradient-hero);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
