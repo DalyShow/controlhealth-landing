@@ -41,6 +41,11 @@
   --color-figure-body: #8c97a8;
   --color-figure-accent: #5eead4;
 
+  /* Frosted plate fill: opaque enough to occlude, with a sheen from the far
+     corner to the near one so the stack reads as glass rather than card. */
+  --color-figure-glass-far: #1d2431;
+  --color-figure-glass-near: #131822;
+
   /* Soft, far-throw elevation for the hero call to action. */
   --shadow-cta:
     0 186px 52px rgb(0 0 0 / 0), 0 119px 48px rgb(0 0 0 / 0.01),
@@ -98,29 +103,20 @@
     }
   }
 
-  @keyframes figure-pulse {
-    0% {
-      opacity: 0;
-      transform: translateY(0);
-    }
-    10% {
-      opacity: 1;
-    }
-    70% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(var(--pulse-drop));
+  /* Marching dashes. The offset travels exactly one dash period so the loop
+     is seamless; the dasharray on the element must match (2 + 6 = 8). */
+  @keyframes figure-flow {
+    to {
+      stroke-dashoffset: -8;
     }
   }
 
-  @keyframes figure-landing {
+  @keyframes figure-arrival {
     0% {
-      opacity: 0.55;
-      transform: scale(0.35);
+      opacity: 0.6;
+      transform: scale(0.3);
     }
-    60%,
+    45%,
     100% {
       opacity: 0;
       transform: scale(1);

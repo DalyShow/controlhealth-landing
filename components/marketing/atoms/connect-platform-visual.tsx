@@ -2,26 +2,26 @@ import {
   ISO_ELLIPSE_RX,
   ISO_ELLIPSE_RY,
   isoPoint,
-  isoRect,
   isoSquare,
   roundedPolygon,
 } from "@/lib/isometric";
 import type { CSSProperties } from "react";
 
-type Device = {
-  key: string;
-  label: string;
-  /** Position on the platform the device hovers over. */
+type SourceKey = "record" | "watch" | "ring" | "band";
+
+type Source = {
+  key: SourceKey;
+  /** Point on the platform this source feeds, in world coordinates. */
   x: number;
   y: number;
-  /** Seconds of delay before this device's pulse starts. */
+  /** Seconds of offset so the four flows stay out of phase. */
   delay: number;
 };
 
 /** Half-width of the platform plates, in world units. */
 const PLATE_HALF = 74;
 
-/** Corner rounding applied to every plate and device outline. */
+/** Corner rounding on the plates. */
 const CORNER = 16;
 
 /** Heights of the stacked plates, bottom to top. */
@@ -29,132 +29,164 @@ const PLATE_HEIGHTS = [0, 18, 36, 54] satisfies number[];
 
 const SURFACE_Z = 54;
 
-/** Height the devices hover at. */
-const DEVICE_Z = 200;
+/** Height the sources hover at. */
+const SOURCE_Z = 200;
 
 /**
- * Where each device sits above the platform. Screen height follows (x + y)
- * and horizontal position follows (x - y), so these are chosen to spread the
- * devices sideways while keeping them on a shallow stagger — otherwise the
- * front-most device drops far enough to collide with the platform's far
- * corner. The links read as vertical drops because only z changes between a
- * device and its landing point.
+ * Screen position in an isometric view follows (x - y) horizontally and
+ * (x + y) vertically. These are picked to spread the four sources evenly
+ * sideways while keeping them on a shallow stagger, so none of them drops far
+ * enough to collide with the platform's far corner.
  */
-const DEVICES = [
-  { key: "watch", label: "Apple Watch", x: -40, y: 30, delay: 0 },
-  { key: "ring", label: "Oura ring", x: -12, y: 12, delay: 0.9 },
-  { key: "band", label: "Whoop band", x: 40, y: -30, delay: 1.8 },
-] satisfies Device[];
+const SOURCES = [
+  { key: "record", x: -51, y: 39, delay: 0 },
+  { key: "watch", x: -13, y: 17, delay: 0.7 },
+  { key: "ring", x: 13, y: -17, delay: 1.4 },
+  { key: "band", x: 51, y: -39, delay: 2.1 },
+] satisfies Source[];
 
-const PULSE_DURATION_S = 2.7;
+/** One full cycle of the marching dashes that carry the data down. */
+const FLOW_DURATION_S = 1.6;
+
+/** How often the platform acknowledges an arrival. */
+const ARRIVAL_DURATION_S = 3.2;
 
 /**
- * "Connect your records and wearables" — a stacked isometric platform with
- * three wearables hovering above it, each dropping a dotted link that pulses
- * down into the surface.
+ * "Connect your health records and wearables" — an isometric platform stack
+ * fed by four sources. The platform stays isometric because it is the ground
+ * plane; the sources face the viewer, since a watch drawn in the isometric
+ * plane reads as a skewed rounded rectangle rather than as a watch.
  */
 const classes = {
   root: "block h-full w-auto max-h-[320px]",
-  plate: "fill-none stroke-figure-line",
-  plateTop: "fill-none stroke-figure-line-bright",
+  plate: "stroke-figure-line [fill:url(#figure-glass)]",
+  plateTop: "stroke-figure-line-bright [fill:url(#figure-glass)]",
   guide: "fill-none stroke-figure-line-dim [stroke-dasharray:2_5]",
-  link: "fill-none stroke-figure-line [stroke-dasharray:2_6]",
-  pulse: "fill-figure-accent motion-reduce:hidden",
-  landing:
+  flow: "fill-none stroke-figure-accent/70 [stroke-dasharray:2_6] motion-reduce:stroke-figure-line-dim",
+  arrival:
     "[transform-box:fill-box] [transform-origin:center] fill-none stroke-figure-accent motion-reduce:hidden",
-  device: "fill-figure-ground stroke-figure-line-bright",
-  deviceDetail: "fill-none stroke-figure-line",
+  body: "fill-figure-ground stroke-figure-line-bright",
+  detail: "fill-none stroke-figure-line",
   float: "motion-reduce:animate-none",
 } as const;
 
 const plate = (z: number) => roundedPolygon(isoSquare(PLATE_HALF, z), CORNER);
 
-/** Vertical screen distance a pulse travels from a device down to the plate. */
-const dropLength = (x: number, y: number) =>
-  isoPoint(x, y, SURFACE_Z).y - isoPoint(x, y, DEVICE_Z).y;
-
 const floatStyle = (delay: number): CSSProperties => ({
   animation: `figure-float 5s ease-in-out ${delay}s infinite`,
 });
 
-const pulseStyle = (device: Device): CSSProperties =>
-  ({
-    "--pulse-drop": `${dropLength(device.x, device.y)}px`,
-    animation: `figure-pulse ${PULSE_DURATION_S}s linear ${device.delay}s infinite`,
-  }) as CSSProperties;
-
-const landingStyle = (device: Device): CSSProperties => ({
-  animation: `figure-landing ${PULSE_DURATION_S}s ease-out ${device.delay + PULSE_DURATION_S * 0.72}s infinite`,
+const flowStyle = (delay: number): CSSProperties => ({
+  animation: `figure-flow ${FLOW_DURATION_S}s linear ${delay}s infinite`,
 });
 
-/**
- * The Apple Watch: a narrow strap running under a squircle case, with the
- * digital crown on its right edge. The strap has to be clearly thinner than
- * the case or the whole thing reads as an anonymous rounded rectangle.
- */
+const arrivalStyle = (delay: number): CSSProperties => ({
+  animation: `figure-arrival ${ARRIVAL_DURATION_S}s ease-out ${delay}s infinite`,
+});
+
+/** A medical record: a page of ruled lines headed by a medical cross. */
+const RecordGlyph = () => (
+  <>
+    <rect
+      className={classes.body}
+      height={52}
+      rx={4}
+      width={40}
+      x={-20}
+      y={-26}
+    />
+    <path className={classes.detail} d="M-9 -14h14M-2 -21v14" />
+    <path className={classes.detail} d="M-12 -2h24M-12 5h24M-12 12h16" />
+  </>
+);
+
+/** The Apple Watch: squircle case between two strap stubs, crown on the right. */
 const WatchGlyph = () => (
   <>
-    <path
-      className={classes.deviceDetail}
-      d={roundedPolygon(isoRect(8, 34, 0), 4)}
+    <rect
+      className={classes.detail}
+      height={14}
+      rx={4}
+      width={18}
+      x={-9}
+      y={-30}
     />
-    <path
-      className={classes.device}
-      d={roundedPolygon(isoRect(19, 17, 0), 8)}
+    <rect
+      className={classes.detail}
+      height={14}
+      rx={4}
+      width={18}
+      x={-9}
+      y={16}
     />
-    <path
-      className={classes.deviceDetail}
-      d={roundedPolygon(isoRect(12, 10, 0), 5)}
+    <rect
+      className={classes.body}
+      height={36}
+      rx={11}
+      width={32}
+      x={-16}
+      y={-18}
     />
-    <path
-      className={classes.device}
-      d={roundedPolygon(isoRect(4, 3, 0), 1.5)}
-      transform={`translate(${isoPoint(23, 0, 0).x} ${isoPoint(23, 0, 0).y})`}
+    <rect
+      className={classes.detail}
+      height={26}
+      rx={7}
+      width={22}
+      x={-11}
+      y={-13}
+    />
+    <rect
+      className={classes.body}
+      height={10}
+      rx={1.5}
+      width={4}
+      x={15}
+      y={-5}
     />
   </>
 );
 
-/** The Oura ring: two concentric iso circles with a little wall thickness. */
+/** The Oura ring, face on: a plain band with its sensor bosses inside. */
 const RingGlyph = () => (
   <>
-    <ellipse
-      className={classes.device}
-      rx={17 * ISO_ELLIPSE_RX}
-      ry={17 * ISO_ELLIPSE_RY}
-    />
-    <ellipse
-      className={classes.deviceDetail}
-      rx={11 * ISO_ELLIPSE_RX}
-      ry={11 * ISO_ELLIPSE_RY}
-    />
-    <ellipse
-      className={classes.deviceDetail}
-      cy={6}
-      rx={17 * ISO_ELLIPSE_RX}
-      ry={17 * ISO_ELLIPSE_RY}
-    />
-    <ellipse
-      className={classes.deviceDetail}
-      cy={6}
-      rx={11 * ISO_ELLIPSE_RX}
-      ry={11 * ISO_ELLIPSE_RY}
-    />
+    <circle className={classes.body} r={19} />
+    <circle className={classes.detail} r={12} />
+    <path className={classes.detail} d="M-5 11a13 13 0 0 0 10 0" />
   </>
 );
 
 /** The Whoop band: a continuous strap loop with the sensor pod set into it. */
 const BandGlyph = () => (
   <>
-    <path className={classes.device} d={roundedPolygon(isoRect(9, 34, 0), 8)} />
-    <path
-      className={classes.deviceDetail}
-      d={roundedPolygon(isoRect(4, 28, 0), 4)}
+    <rect
+      className={classes.body}
+      height={54}
+      rx={13}
+      width={28}
+      x={-14}
+      y={-27}
     />
-    <path className={classes.device} d={roundedPolygon(isoRect(11, 9, 0), 4)} />
+    <rect
+      className={classes.detail}
+      height={40}
+      rx={7}
+      width={14}
+      x={-7}
+      y={-20}
+    />
+    <rect
+      className={classes.body}
+      height={15}
+      rx={4}
+      width={18}
+      x={-9}
+      y={-7.5}
+    />
   </>
 );
 
 const GLYPHS = {
+  record: RecordGlyph,
   watch: WatchGlyph,
   ring: RingGlyph,
   band: BandGlyph,
@@ -168,19 +200,18 @@ export const ConnectPlatformVisual = () => (
     strokeLinecap="round"
     strokeLinejoin="round"
     strokeWidth={1}
-    viewBox="-142 -252 284 338"
+    viewBox="-146 -248 292 332"
     xmlns="http://www.w3.org/2000/svg"
   >
-    {/* The stack, drawn bottom plate first so upper plates overlap it. */}
-    {PLATE_HEIGHTS.map((z) => (
-      <path
-        className={z === SURFACE_Z ? classes.plateTop : classes.plate}
-        d={plate(z)}
-        key={z}
-      />
-    ))}
+    <defs>
+      <linearGradient id="figure-glass" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stopColor="var(--color-figure-glass-far)" />
+        <stop offset="1" stopColor="var(--color-figure-glass-near)" />
+      </linearGradient>
+    </defs>
 
-    {/* Corner guides tying the stack together. */}
+    {/* Guides first: the frosted plates draw over them, leaving them visible
+        only in the gaps between each plate's outer corners. */}
     {isoSquare(PLATE_HALF, 0).map((corner, index) => {
       const top = isoSquare(PLATE_HALF, SURFACE_Z)[index];
 
@@ -196,41 +227,45 @@ export const ConnectPlatformVisual = () => (
       ) : null;
     })}
 
-    {DEVICES.map((device) => {
-      const landing = isoPoint(device.x, device.y, SURFACE_Z);
-      const hover = isoPoint(device.x, device.y, DEVICE_Z);
-      const Glyph = GLYPHS[device.key as keyof typeof GLYPHS];
+    {/* Bottom plate first, so the upper plates occlude it. */}
+    {PLATE_HEIGHTS.map((z) => (
+      <path
+        className={z === SURFACE_Z ? classes.plateTop : classes.plate}
+        d={plate(z)}
+        key={z}
+      />
+    ))}
+
+    {SOURCES.map((source) => {
+      const landing = isoPoint(source.x, source.y, SURFACE_Z);
+      const hover = isoPoint(source.x, source.y, SOURCE_Z);
+      const Glyph = GLYPHS[source.key];
 
       return (
-        <g key={device.key}>
+        <g key={source.key}>
+          {/* Marching dashes run the length of the link, so the data reads as
+              flowing continuously rather than arriving as single packets. */}
           <line
-            className={classes.link}
+            className={classes.flow}
+            style={flowStyle(source.delay)}
             x1={hover.x}
             x2={landing.x}
             y1={hover.y}
             y2={landing.y}
           />
 
-          <circle
-            className={classes.pulse}
-            cx={hover.x}
-            cy={hover.y}
-            r={2.5}
-            style={pulseStyle(device)}
-          />
-
           <ellipse
-            className={classes.landing}
+            className={classes.arrival}
             cx={landing.x}
             cy={landing.y}
-            rx={14 * ISO_ELLIPSE_RX}
-            ry={14 * ISO_ELLIPSE_RY}
-            style={landingStyle(device)}
+            rx={15 * ISO_ELLIPSE_RX}
+            ry={15 * ISO_ELLIPSE_RY}
+            style={arrivalStyle(source.delay)}
           />
 
           <g
             className={classes.float}
-            style={floatStyle(device.delay)}
+            style={floatStyle(source.delay)}
             transform={`translate(${hover.x} ${hover.y})`}
           >
             <Glyph />
