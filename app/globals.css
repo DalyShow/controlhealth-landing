@@ -90,115 +90,6 @@
      the beats per minute they display. */
   --animate-heartbeat: heartbeat 1s ease-in-out infinite;
 
-  /* Figure illustrations: devices hover, a pulse runs down each link, and the
-     platform acknowledges it as it lands. Durations and delays are supplied
-     per element so the three links stay out of phase. */
-  @keyframes figure-float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-6px);
-    }
-  }
-
-  /* Marching dashes. The offset travels exactly one dash period so the loop
-     is seamless; the dasharray on the element must match (2 + 6 = 8). */
-  @keyframes figure-flow {
-    to {
-      stroke-dashoffset: -8;
-    }
-  }
-
-  @keyframes figure-arrival {
-    0% {
-      opacity: 0.6;
-      transform: scale(0.3);
-    }
-    45%,
-    100% {
-      opacity: 0;
-      transform: scale(1);
-    }
-  }
-
-  /* A packet leaves its source, lands at 40% of the cycle, then waits out the
-     rest so the three sources take turns rather than overlapping. The travel
-     distance comes from --dx / --dy, set per link. */
-  @keyframes figure-travel {
-    0% {
-      opacity: 0;
-      transform: translate(0, 0);
-    }
-    8%,
-    34% {
-      opacity: 1;
-    }
-    40%,
-    100% {
-      opacity: 0;
-      transform: translate(var(--dx), var(--dy));
-    }
-  }
-
-  @keyframes figure-ripple {
-    0% {
-      opacity: 0.65;
-      transform: scale(0.25);
-    }
-    45%,
-    100% {
-      opacity: 0;
-      transform: scale(1);
-    }
-  }
-
-  /* The platform dips as each packet lands, so the stack reads as receiving
-     rather than as a static backdrop. */
-  @keyframes figure-receive {
-    0%,
-    45%,
-    100% {
-      opacity: 1;
-    }
-    12% {
-      opacity: 0.82;
-    }
-  }
-
-  @keyframes figure-twinkle {
-    0%,
-    100% {
-      opacity: 0.3;
-      scale: 0.8;
-    }
-    50% {
-      opacity: 1;
-      scale: 1;
-    }
-  }
-
-  /* A short lit segment runs the perimeter. The path carries pathLength="100",
-     which normalises the border so the dash pattern is a percentage of it and
-     the loop closes seamlessly whatever the box measures. */
-  @keyframes figure-trace {
-    to {
-      stroke-dashoffset: -100;
-    }
-  }
-
-  @keyframes figure-caret {
-    0%,
-    45% {
-      opacity: 1;
-    }
-    55%,
-    100% {
-      opacity: 0;
-    }
-  }
-
   @keyframes heartbeat {
     0%,
     34%,
@@ -227,6 +118,120 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* The figures drive these from inline styles rather than from an --animate-*
+   utility. Tailwind only emits a @keyframes declared inside @theme when a used
+   theme variable references it, so these have to live at the top level or they
+   are tree-shaken away and every figure renders frozen. */
+
+/* Figure illustrations: devices hover, a pulse runs down each link, and the
+   platform acknowledges it as it lands. Durations and delays are supplied
+   per element so the three links stay out of phase. */
+@keyframes figure-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Marching dashes. The offset travels exactly one dash period so the loop
+   is seamless; the dasharray on the element must match (2 + 6 = 8). */
+@keyframes figure-flow {
+  to {
+    stroke-dashoffset: -8;
+  }
+}
+
+@keyframes figure-arrival {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.3);
+  }
+  45%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* A packet leaves its source, lands at 40% of the cycle, then waits out the
+   rest so the three sources take turns rather than overlapping. The travel
+   distance comes from --dx / --dy, set per link. */
+@keyframes figure-travel {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  8%,
+  34% {
+    opacity: 1;
+  }
+  40%,
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+
+@keyframes figure-ripple {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.25);
+  }
+  45%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* The platform dips as each packet lands, so the stack reads as receiving
+   rather than as a static backdrop. */
+@keyframes figure-receive {
+  0%,
+  45%,
+  100% {
+    opacity: 1;
+  }
+  12% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes figure-twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    scale: 0.8;
+  }
+  50% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* A short lit segment runs the perimeter. The path carries pathLength="100",
+   which normalises the border so the dash pattern is a percentage of it and
+   the loop closes seamlessly whatever the box measures. */
+@keyframes figure-trace {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes figure-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
   }
 }
 
