@@ -12,6 +12,7 @@ import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
+import { LandingCta } from "@/components/marketing/organisms/landing-cta";
 import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
 import { assetPath } from "@/lib/asset-path";
@@ -83,6 +84,14 @@ const CALLOUT_VISUALS = {
   "03": <LabPanelVisual />,
 } as const;
 
+/** Closing call to action, sharing the callouts' ground. */
+const CTA = {
+  headline: "Personalized lab panels",
+  subheadline:
+    "Free platform access. Pay only when you order labs. No subscription required.",
+  ctaLabel: "Get Started",
+} as const;
+
 const classes = {
   page: "relative w-full",
 } as const;
@@ -129,6 +138,11 @@ const LandingPage = () => (
         />
       ))}
     </CalloutSection>
+    <LandingCta
+      ctaLabel={CTA.ctaLabel}
+      headline={CTA.headline}
+      subheadline={CTA.subheadline}
+    />
   </main>
 );
 

@@ -4,8 +4,14 @@ import type { ReactNode } from "react";
 type Level = 1 | 2 | 3;
 
 type HeadingProperties = {
-  /** Step on the title ramp, which also picks the tag. */
+  /** Step on the title ramp, which picks the tag unless `as` overrides it. */
   level: Level;
+  /**
+   * Tag to render, when the ramp step and the document outline disagree — a
+   * closing panel wanting the H1 treatment on a page whose H1 is the hero,
+   * say. Keep the two together unless there is a reason not to.
+   */
+  as?: Level;
   children: ReactNode;
   /**
    * Surface concerns the ramp has no opinion on — colour, alignment, measure.
@@ -32,8 +38,13 @@ const TAGS = {
   3: "h3",
 } as const satisfies Record<Level, string>;
 
-export const Heading = ({ level, children, className }: HeadingProperties) => {
-  const Tag = TAGS[level];
+export const Heading = ({
+  level,
+  as,
+  children,
+  className,
+}: HeadingProperties) => {
+  const Tag = TAGS[as ?? level];
 
   return <Tag className={cn(RAMP[level], className)}>{children}</Tag>;
 };
