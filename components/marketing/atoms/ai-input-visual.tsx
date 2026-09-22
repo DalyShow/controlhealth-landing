@@ -40,14 +40,14 @@ const TWINKLE_S = 2.6;
 const classes = {
   root: "block h-auto w-full",
   field:
-    "stroke-figure-line-bright [fill:url(#input-glass)] [stroke-width:0.65]",
+    "stroke-figure-line-bright [fill:url(#input-glass)] [stroke-width:0.54]",
   fill: "fill-figure-line-dim stroke-none",
-  mark: "fill-none stroke-figure-line [stroke-width:1]",
+  mark: "fill-none stroke-figure-line [stroke-width:0.86]",
   caret: "fill-figure-accent",
   sparkle:
-    "fill-none stroke-figure-accent [stroke-width:1.3] [transform-box:fill-box] [transform-origin:center]",
+    "fill-none stroke-figure-accent [stroke-width:1.07] [transform-box:fill-box] [transform-origin:center]",
   highlight:
-    "fill-none stroke-figure-accent [stroke-dasharray:17_83] [stroke-width:1.8] [filter:drop-shadow(0_0_3px_var(--color-figure-accent))]",
+    "fill-none stroke-figure-accent [stroke-dasharray:17_83] [stroke-width:1.5] [filter:drop-shadow(0_0_3px_var(--color-figure-accent))]",
 } as const;
 
 const FIELD_PATH = roundedRectPath(

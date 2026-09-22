@@ -16,6 +16,11 @@
 }
 
 @theme {
+  /* Page grid. Everything below the hero lays out on a 1440px frame: 96px
+     margins leave 1248px of content on twelve 82px columns separated by 24px
+     gutters, so a third of the row is exactly four columns wide. */
+  --container-page: 1440px;
+
   /* Marketing hero — dark gradient surface, sampled from the
      Control Health Marketing Site Figma (node 1259:1266). */
   --color-hero-gradient-from: #1f2937;

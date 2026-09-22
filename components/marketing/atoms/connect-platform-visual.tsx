@@ -103,9 +103,9 @@ const ART = {
 const classes = {
   root: "block h-auto w-full",
   stack: "[transform-box:fill-box] [transform-origin:center]",
-  plate: "stroke-figure-line [fill:url(#platform-glass)] [stroke-width:0.65]",
+  plate: "stroke-figure-line [fill:url(#platform-glass)] [stroke-width:0.54]",
   plateTop:
-    "stroke-figure-line-bright [fill:url(#platform-glass)] [stroke-width:0.65]",
+    "stroke-figure-line-bright [fill:url(#platform-glass)] [stroke-width:0.54]",
   packet:
     "fill-figure-accent [filter:drop-shadow(0_0_2.5px_var(--color-figure-accent))]",
   ripple:
@@ -165,7 +165,7 @@ export const ConnectPlatformVisual = () => (
     fill="none"
     strokeLinecap="round"
     strokeLinejoin="round"
-    strokeWidth={1.3}
+    strokeWidth={1.07}
     viewBox="-128 -180 256 250"
     xmlns="http://www.w3.org/2000/svg"
   >
