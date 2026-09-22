@@ -1,3 +1,4 @@
+import { Heading } from "@/components/marketing/atoms/heading";
 import { Button } from "@/components/ui/button";
 
 type HeroCopyProperties = {
@@ -14,8 +15,7 @@ type HeroCopyProperties = {
 const classes = {
   group: "flex flex-col items-center gap-10",
   copy: "flex flex-col items-center gap-4",
-  headline:
-    "text-balance text-center font-display font-normal text-[clamp(2.75rem,2.31rem+1.878vw,4rem)] text-white leading-[1.15] tracking-[-0.03em]",
+  headline: "text-balance text-center text-white",
   subheadline:
     "max-w-[29.8125rem] text-center font-sans text-base text-white uppercase leading-[1.5] tracking-[0.08em]",
   cta: "w-full max-w-[17rem] shadow-cta",
@@ -29,7 +29,9 @@ export const HeroCopy = ({
 }: HeroCopyProperties) => (
   <div className={classes.group}>
     <div className={classes.copy}>
-      <h1 className={classes.headline}>{headline}</h1>
+      <Heading className={classes.headline} level={1}>
+        {headline}
+      </Heading>
       <p className={classes.subheadline}>{subheadline}</p>
     </div>
     {ctaHref ? (

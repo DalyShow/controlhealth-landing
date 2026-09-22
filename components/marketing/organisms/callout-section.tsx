@@ -1,3 +1,4 @@
+import { Heading } from "@/components/marketing/atoms/heading";
 import type { ReactNode } from "react";
 
 type CalloutSectionProperties = {
@@ -22,8 +23,7 @@ const classes = {
   grid: "grid grid-cols-12 gap-x-6",
   header:
     "col-span-8 col-start-3 flex flex-col items-center gap-5 text-center max-lg:col-span-10 max-lg:col-start-2 max-md:col-span-12 max-md:col-start-1",
-  headline:
-    "font-display font-medium text-[clamp(1.875rem,1.35rem+1.6vw,2.75rem)] text-primary-foreground leading-[1.15]",
+  headline: "text-primary-foreground",
   lede: "text-pretty font-sans text-figure-body text-lg leading-[1.6] max-sm:text-base",
   /**
    * The rule belongs to the gutter rather than to either card, so it is drawn
@@ -44,7 +44,9 @@ export const CalloutSection = ({
     <div className={classes.shell}>
       <div className={classes.grid}>
         <header className={classes.header}>
-          <h2 className={classes.headline}>{headline}</h2>
+          <Heading className={classes.headline} level={2}>
+            {headline}
+          </Heading>
           <p className={classes.lede}>{body}</p>
         </header>
       </div>

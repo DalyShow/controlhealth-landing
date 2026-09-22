@@ -1,3 +1,4 @@
+import { Heading } from "@/components/marketing/atoms/heading";
 import type { ReactNode } from "react";
 
 type CalloutCardProperties = {
@@ -32,7 +33,7 @@ const classes = {
   // Padded off the drawing above it, so the claim reads as a separate zone
   // rather than as a caption hanging off the figure.
   copy: "flex flex-col gap-4 pt-8",
-  title: "font-medium font-sans text-base text-primary-foreground",
+  title: "text-primary-foreground",
   body: "text-pretty font-sans text-[15px] text-figure-body leading-[1.6]",
 } as const;
 
@@ -46,7 +47,9 @@ export const CalloutCard = ({
     <p className={classes.label}>{label}</p>
     <div className={classes.well}>{visual}</div>
     <div className={classes.copy}>
-      <h3 className={classes.title}>{title}</h3>
+      <Heading className={classes.title} level={3}>
+        {title}
+      </Heading>
       <p className={classes.body}>{body}</p>
     </div>
   </article>
