@@ -26,6 +26,11 @@
      across the three are calibrated against this width. */
   --container-figure: 340px;
 
+  /* Brand spectrum: the coral-to-mint ramp, used to paint display type. */
+  --color-spectrum-peach: #fab8a7;
+  --color-spectrum-blush: #fcd1de;
+  --color-spectrum-mint: #81ffd6;
+
   /* Marketing hero — dark gradient surface, sampled from the
      Control Health Marketing Site Figma (node 1259:1266). */
   --color-hero-gradient-from: #1f2937;
@@ -70,6 +75,13 @@
 }
 
 @theme inline {
+  --gradient-spectrum: linear-gradient(
+    90deg,
+    var(--color-spectrum-peach) 0%,
+    var(--color-spectrum-blush) 33%,
+    var(--color-spectrum-mint) 100%
+  );
+
   --gradient-hero: linear-gradient(
     57.765deg,
     var(--color-hero-gradient-from) 2.69%,
@@ -116,6 +128,15 @@
       scale: 1.12;
     }
   }
+}
+
+@utility text-spectrum-gradient {
+  /* Paints the glyphs with the ramp rather than the box behind them. The
+     prefixed property is still required for Safari. */
+  background-image: var(--gradient-spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 @utility bg-hero-gradient {

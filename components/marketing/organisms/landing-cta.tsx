@@ -23,7 +23,7 @@ const classes = {
   inner:
     "col-span-8 col-start-3 flex flex-col items-center gap-8 text-center max-lg:col-span-10 max-lg:col-start-2 max-md:col-span-12 max-md:col-start-1",
   copy: "flex flex-col items-center gap-5",
-  headline: "text-balance text-primary-foreground",
+  headline: "text-balance text-spectrum-gradient",
   subheadline:
     "max-w-[46ch] text-balance font-sans text-figure-body text-lg leading-[1.6] max-sm:text-base",
   cta: "w-full max-w-[17rem]",
