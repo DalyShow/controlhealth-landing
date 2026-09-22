@@ -24,7 +24,7 @@ const NAV_LINKS = [
 
 const NAV_CTA_LABEL = "Join the waitlist";
 const LOCKUP_SRC = "/assets/lockup-light.svg";
-const HERO_MEDIA_SRC = "/media/video-3.mp4";
+const HERO_MEDIA_SRC = "/media/video-4.mp4";
 const WORDMARK_SRC = "/assets/wordmark-light.svg";
 
 const HERO = {
