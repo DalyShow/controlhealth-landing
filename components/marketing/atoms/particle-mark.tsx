@@ -57,6 +57,29 @@ const SIZE_RANGE = 0.55;
 const OPACITY_RANGE = 0.55;
 const LAUNCH_SPREAD_MS = 170;
 
+/**
+ * When a mote counts as home. Generous on purpose: at the size the mark
+ * renders, a mark unit is a fraction of a pixel, so a tighter threshold only
+ * holds the run open for motion nobody can see.
+ */
+const REST_OFFSET = 0.8;
+const REST_SPEED = 3;
+
+/** Beat at the assembled state, so the eye registers that it rebuilt. */
+const HOLD_MS = 260;
+
+/**
+ * Hard cap on one run. The spring is underdamped, so the slowest mote settles
+ * somewhere near two seconds; this sits well clear of that, because it is a
+ * safety net against a straggler stranding the sequence, not the normal way
+ * a run ends.
+ */
+const MAX_RUN_MS = 3000;
+
+/** How fast the solid mark gives way to the cloud, and takes over again. */
+const BURST_FADE = 14;
+const RESTORE_FADE = 6;
+
 /** The canvas is wider than the mark, because the cloud travels past it. */
 const BOX_RATIO = 2.1;
 
@@ -105,6 +128,11 @@ const traits = (mote: Mote) => ({
  * means a canvas. Each mote then carries its own mass, spring, damping, launch
  * moment, aim, size and opacity, so none of them travels the same arc or
  * arrives at the same time.
+ *
+ * Hover is a trigger rather than a state the animation is held in: once it
+ * starts, the sequence runs to the end and settles back to the solid mark on
+ * its own. Leaving does nothing, so pulling the pointer away mid-flight cannot
+ * cut the motion short or start a second one fighting it.
  */
 const classes = {
   root: "block",
@@ -143,13 +171,16 @@ export const ParticleMark = ({ size, label }: ParticleMarkProperties) => {
     const core = new Path2D(MARK_CORE);
     const motes = makeMotes();
 
-    let running = false;
-    let hovered = false;
+    let phase: "idle" | "burst" | "hold" | "restore" = "idle";
     let startedAt = 0;
+    let settledAt = 0;
     let lastAt = 0;
     let solidAlpha = 1;
     let cloudAlpha = 0;
     let handle = 0;
+
+    const approach = (from: number, to: number, dt: number, rate: number) =>
+      from + (to - from) * Math.min(1, dt * rate);
 
     const kick = (mote: Mote) => {
       const fromX = mote.hx - CENTRE;
@@ -195,8 +226,8 @@ export const ParticleMark = ({ size, label }: ParticleMarkProperties) => {
 
       return (
         pull >= 1 &&
-        Math.hypot(mote.hx - mote.x, mote.hy - mote.y) <= 0.35 &&
-        Math.hypot(mote.vx, mote.vy) <= 1.2
+        Math.hypot(mote.hx - mote.x, mote.hy - mote.y) <= REST_OFFSET &&
+        Math.hypot(mote.vx, mote.vy) <= REST_SPEED
       );
     };
 
@@ -241,34 +272,58 @@ export const ParticleMark = ({ size, label }: ParticleMarkProperties) => {
       context.restore();
     };
 
+    /** Flying apart and falling: the solid mark gives way to the cloud. */
+    const burstFrame = (now: number, dt: number) => {
+      solidAlpha = approach(solidAlpha, 0, dt, BURST_FADE);
+      cloudAlpha = approach(cloudAlpha, 1, dt, BURST_FADE);
+
+      const elapsed = now - startedAt;
+
+      if (step(dt, elapsed) || elapsed > MAX_RUN_MS) {
+        phase = "hold";
+        settledAt = now;
+      }
+    };
+
+    /** Rebuilt: the motes are home, so the solid mark takes over from them. */
+    const restoreFrame = (dt: number) => {
+      solidAlpha = approach(solidAlpha, 1, dt, RESTORE_FADE);
+      cloudAlpha = approach(cloudAlpha, 0, dt, RESTORE_FADE);
+
+      if (solidAlpha > 0.996 && cloudAlpha < 0.004) {
+        solidAlpha = 1;
+        cloudAlpha = 0;
+        phase = "idle";
+      }
+    };
+
     const frame = () => {
       const now = performance.now();
       const dt = Math.min((now - lastAt) / 1000, 1 / 30);
 
       lastAt = now;
-      solidAlpha += ((hovered ? 0 : 1) - solidAlpha) * Math.min(1, dt * 9);
-      cloudAlpha += ((hovered ? 1 : 0) - cloudAlpha) * Math.min(1, dt * 9);
 
-      if (running && step(dt, now - startedAt)) {
-        running = false;
+      if (phase === "burst") {
+        burstFrame(now, dt);
+      } else if (phase === "hold" && now - settledAt > HOLD_MS) {
+        phase = "restore";
+      } else if (phase === "restore") {
+        restoreFrame(dt);
       }
 
       draw();
 
-      if (running || hovered || solidAlpha < 0.996 || cloudAlpha > 0.004) {
+      if (phase !== "idle") {
         handle = requestAnimationFrame(frame);
       }
     };
 
     const enter = () => {
-      if (still) {
+      // Ignored while a run is in flight, so re-entering cannot restart it
+      // half-way and produce two overlapping sequences.
+      if (still || phase !== "idle") {
         return;
       }
-
-      hovered = true;
-      startedAt = performance.now();
-      lastAt = startedAt;
-      running = true;
 
       for (const mote of motes) {
         mote.x = mote.hx;
@@ -278,25 +333,19 @@ export const ParticleMark = ({ size, label }: ParticleMarkProperties) => {
         mote.live = false;
       }
 
-      cancelAnimationFrame(handle);
-      frame();
-    };
-
-    const leave = () => {
-      hovered = false;
-      lastAt = performance.now();
+      phase = "burst";
+      startedAt = performance.now();
+      lastAt = startedAt;
       cancelAnimationFrame(handle);
       frame();
     };
 
     draw();
     canvas.addEventListener("pointerenter", enter);
-    canvas.addEventListener("pointerleave", leave);
 
     return () => {
       cancelAnimationFrame(handle);
       canvas.removeEventListener("pointerenter", enter);
-      canvas.removeEventListener("pointerleave", leave);
     };
   }, [size]);
 
