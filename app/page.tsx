@@ -1,7 +1,9 @@
 import { BrandLockup } from "@/components/marketing/atoms/brand-lockup";
 import { FootstepsIcon } from "@/components/marketing/atoms/footsteps-icon";
+import { AiInputVisual } from "@/components/marketing/atoms/ai-input-visual";
 import { ConnectPlatformVisual } from "@/components/marketing/atoms/connect-platform-visual";
 import { HeroMedia } from "@/components/marketing/atoms/hero-media";
+import { LabPanelVisual } from "@/components/marketing/atoms/lab-panel-visual";
 import { RollingFigure } from "@/components/marketing/atoms/rolling-figure";
 import { TickingFigure } from "@/components/marketing/atoms/ticking-figure";
 import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
@@ -14,6 +16,13 @@ import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
 import { assetPath } from "@/lib/asset-path";
 import { Moon } from "lucide-react";
+
+type Callout = {
+  /** Plate number, which also selects the figure. */
+  label: "01" | "02" | "03";
+  title: string;
+  body: string;
+};
 
 /**
  * Hero copy for the personalized-panel landing page.
@@ -42,26 +51,36 @@ const STEP_BEAT_MS = 900;
 /** Where the heart rate workout starts and returns to. */
 const RESTING_BPM = 58;
 
-/**
- * Callouts below the hero. Only the first is written; the other two are
- * placeholders until their copy and animation briefs land.
- */
-const CALLOUTS = {
-  connect: {
-    figure: "0.1",
+/** Introduces the three callouts as one product rather than three features. */
+const SECTION = {
+  headline: "How Control Health works",
+  body: "Three pieces working together: your records and wearables in one place, an AI assistant that helps you better understand your data, and lab panels personalized to you.",
+} as const;
+
+/** The three callouts below the hero, in the order they are numbered. */
+const CALLOUTS = [
+  {
+    label: "01",
     title: "Connect your health records and wearables",
     body: "Pull records, labs and every device you already wear into one place, so nothing about your health lives in a silo.",
   },
-  second: {
-    figure: "0.2",
-    title: "Second callout",
-    body: "Placeholder — awaiting copy and an animation brief.",
+  {
+    label: "02",
+    title: "Understand what your data actually says",
+    body: "Ask anything. The AI assistant draws on your full health history, so the answers are about you, not the population. Get summaries, visit prep, and translations of what your records and labs actually mean.",
   },
-  third: {
-    figure: "0.3",
-    title: "Third callout",
-    body: "Placeholder — awaiting copy and an animation brief.",
+  {
+    label: "03",
+    title: "Take action with personalized lab panels",
+    body: "Turn insight into action. Use AI-generated information based on your available records and health history to explore and customize lab tests available through an independent nationwide provider.",
   },
+] satisfies Callout[];
+
+/** Figures keyed by plate label, so the copy and the drawing stay separate. */
+const CALLOUT_VISUALS = {
+  "01": <ConnectPlatformVisual />,
+  "02": <AiInputVisual />,
+  "03": <LabPanelVisual />,
 } as const;
 
 const classes = {
@@ -99,25 +118,16 @@ const LandingPage = () => (
       }
       subheadline={HERO.subheadline}
     />
-    <CalloutSection>
-      <CalloutCard
-        body={CALLOUTS.connect.body}
-        figure={CALLOUTS.connect.figure}
-        title={CALLOUTS.connect.title}
-        visual={<ConnectPlatformVisual />}
-      />
-      <CalloutCard
-        body={CALLOUTS.second.body}
-        figure={CALLOUTS.second.figure}
-        title={CALLOUTS.second.title}
-        visual={null}
-      />
-      <CalloutCard
-        body={CALLOUTS.third.body}
-        figure={CALLOUTS.third.figure}
-        title={CALLOUTS.third.title}
-        visual={null}
-      />
+    <CalloutSection body={SECTION.body} headline={SECTION.headline}>
+      {CALLOUTS.map((callout) => (
+        <CalloutCard
+          body={callout.body}
+          key={callout.label}
+          label={callout.label}
+          title={callout.title}
+          visual={CALLOUT_VISUALS[callout.label]}
+        />
+      ))}
     </CalloutSection>
   </main>
 );
