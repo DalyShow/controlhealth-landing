@@ -193,19 +193,19 @@ const LAB_KEYFRAMES = [
  * with one reading outside its reference range.
  */
 const classes = {
-  root: "block h-auto w-full",
-  dot: "fill-transparent stroke-figure-line-dim [stroke-width:0.86]",
-  halo: "fill-none stroke-figure-accent [stroke-width:0.86] [transform-box:fill-box] [transform-origin:center]",
+  root: "block h-auto w-full max-w-figure",
+  dot: "fill-transparent stroke-figure-line-dim [stroke-width:1.01]",
+  halo: "fill-none stroke-figure-accent [stroke-width:1.01] [transform-box:fill-box] [transform-origin:center]",
   sweep:
-    "stroke-figure-accent [stroke-width:1.07] [filter:drop-shadow(0_0_4px_var(--color-figure-accent))]",
-  card: "stroke-figure-line-bright [fill:url(#panel-glass)] [stroke-width:0.54]",
+    "stroke-figure-accent [stroke-width:1.26] [filter:drop-shadow(0_0_4px_var(--color-figure-accent))]",
+  card: "stroke-figure-line-bright [fill:url(#panel-glass)] [stroke-width:0.63]",
   label: "fill-figure-line-dim",
   track: "fill-figure-line-dim",
   band: "fill-figure-line opacity-55",
   value:
     "fill-figure-line-bright [transform-box:fill-box] [transform-origin:center]",
   flag: "fill-figure-accent [filter:drop-shadow(0_0_4px_var(--color-figure-accent))]",
-  pick: "fill-figure-line-bright stroke-figure-line-bright [stroke-width:0.86] [transform-box:fill-box] [transform-origin:center]",
+  pick: "fill-figure-line-bright stroke-figure-line-bright [stroke-width:1.01] [transform-box:fill-box] [transform-origin:center]",
 } as const;
 
 const runs = (name: string, easing = "linear"): CSSProperties => ({

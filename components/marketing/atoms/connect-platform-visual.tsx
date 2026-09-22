@@ -101,11 +101,11 @@ const ART = {
  * reads as a skewed rounded rectangle rather than as a watch.
  */
 const classes = {
-  root: "block h-auto w-full",
+  root: "block h-auto w-full max-w-figure",
   stack: "[transform-box:fill-box] [transform-origin:center]",
-  plate: "stroke-figure-line [fill:url(#platform-glass)] [stroke-width:0.54]",
+  plate: "stroke-figure-line [fill:url(#platform-glass)] [stroke-width:0.63]",
   plateTop:
-    "stroke-figure-line-bright [fill:url(#platform-glass)] [stroke-width:0.54]",
+    "stroke-figure-line-bright [fill:url(#platform-glass)] [stroke-width:0.63]",
   packet:
     "fill-figure-accent [filter:drop-shadow(0_0_2.5px_var(--color-figure-accent))]",
   ripple:
@@ -165,7 +165,7 @@ export const ConnectPlatformVisual = () => (
     fill="none"
     strokeLinecap="round"
     strokeLinejoin="round"
-    strokeWidth={1.07}
+    strokeWidth={1.26}
     viewBox="-128 -180 256 250"
     xmlns="http://www.w3.org/2000/svg"
   >

@@ -23,8 +23,10 @@ const classes = {
     "font-medium font-mono text-figure-label text-xs uppercase tracking-[0.18em]",
   // Stacked in one column there is no shared baseline to hold, so the well
   // stops reserving height the figure does not use.
-  well: "flex h-[400px] items-center justify-center max-md:h-auto",
-  copy: "flex flex-col gap-3",
+  well: "flex h-[340px] items-center justify-center max-md:h-auto",
+  // Padded off the drawing above it, so the claim reads as a separate zone
+  // rather than as a caption hanging off the figure.
+  copy: "flex flex-col gap-4 pt-8",
   title: "font-medium font-sans text-base text-primary-foreground",
   body: "text-pretty font-sans text-[15px] text-figure-body leading-[1.6]",
 } as const;

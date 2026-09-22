@@ -21,6 +21,11 @@
      gutters, so a third of the row is exactly four columns wide. */
   --container-page: 1440px;
 
+  /* The drawings sit inside a callout's four columns rather than filling them,
+     so they read as figures on the page instead of as banners. Stroke weights
+     across the three are calibrated against this width. */
+  --container-figure: 340px;
+
   /* Marketing hero — dark gradient surface, sampled from the
      Control Health Marketing Site Figma (node 1259:1266). */
   --color-hero-gradient-from: #1f2937;
