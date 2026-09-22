@@ -9,11 +9,9 @@ import {
 } from "@/components/marketing/organisms/landing-footer";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
 import { PageHero } from "@/components/marketing/organisms/page-hero";
-import {
-  type ProseBlock,
-  ProseSection,
-} from "@/components/marketing/organisms/prose-section";
+import type { ProseBlock } from "@/components/marketing/organisms/prose-section";
 import { ShowcaseSection } from "@/components/marketing/organisms/showcase-section";
+import { StickyScrollSection } from "@/components/marketing/organisms/sticky-scroll-section";
 import { assetPath } from "@/lib/asset-path";
 import type { Metadata } from "next";
 
@@ -49,10 +47,10 @@ const PLATFORM = {
 } as const;
 
 /**
- * The belief blocks. Copy is from the live page, with two missing spaces in
- * the middle paragraph repaired.
+ * The panels the page pins and steps through. Copy is from the live page,
+ * with two missing spaces in the middle paragraph repaired.
  */
-const BELIEFS = [
+const PANELS = [
   {
     heading: "What we believe",
     paragraphs: [
@@ -79,9 +77,6 @@ const BELIEFS = [
       height: 1355,
     },
   },
-] satisfies ProseBlock[];
-
-const STORY = [
   {
     heading: "Our Story",
     image: {
@@ -178,8 +173,7 @@ const AboutPage = () => (
       headline={PLATFORM.headline}
       image={PLATFORM.image}
     />
-    <ProseSection blocks={BELIEFS} />
-    <ProseSection blocks={STORY} />
+    <StickyScrollSection panels={PANELS} />
     <LandingCta
       ctaHref={CLOSE.ctaHref}
       ctaLabel={CLOSE.ctaLabel}
