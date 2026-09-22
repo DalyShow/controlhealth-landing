@@ -13,6 +13,11 @@ import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
 import { LandingCta } from "@/components/marketing/organisms/landing-cta";
+import {
+  type FooterColumn,
+  LandingFooter,
+  type SocialLink,
+} from "@/components/marketing/organisms/landing-footer";
 import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
 import { assetPath } from "@/lib/asset-path";
@@ -92,6 +97,51 @@ const CTA = {
   ctaLabel: "Get Started",
 } as const;
 
+/**
+ * Footer. Link targets are placeholders until the sitemap settles; the copy
+ * and the groupings are from the supplied design.
+ */
+const FOOTER = {
+  markLabel: "Control Health",
+  blurb:
+    "Control Health is the health intelligence platform that connects your health records, labs, and wearables. Ask AI with context and build personalized panels from your own history.",
+  statement:
+    "It's your health. You were always in control. Now it should finally feel like it.",
+  legal: "© 2026 Control Health. All rights reserved.",
+} as const;
+
+const FOOTER_COLUMNS = [
+  {
+    heading: "Product",
+    links: [
+      { label: "Pricing", href: "#pricing" },
+      { label: "How it works", href: "#how-it-works" },
+    ],
+  },
+  {
+    heading: "Company",
+    links: [{ label: "About us", href: "#about" }],
+  },
+  {
+    heading: "Support",
+    links: [
+      { label: "FAQs", href: "#faqs" },
+      {
+        label: "support@controlhealth.ai",
+        href: "mailto:support@controlhealth.ai",
+      },
+    ],
+  },
+] satisfies FooterColumn[];
+
+const SOCIALS = [
+  { network: "instagram", href: "https://instagram.com" },
+  { network: "facebook", href: "https://facebook.com" },
+  { network: "x", href: "https://x.com" },
+  { network: "linkedin", href: "https://linkedin.com" },
+  { network: "tiktok", href: "https://tiktok.com" },
+] satisfies SocialLink[];
+
 const classes = {
   page: "relative w-full",
 } as const;
@@ -142,6 +192,15 @@ const LandingPage = () => (
       ctaLabel={CTA.ctaLabel}
       headline={CTA.headline}
       subheadline={CTA.subheadline}
+    />
+    <LandingFooter
+      blurb={FOOTER.blurb}
+      columns={FOOTER_COLUMNS}
+      legal={FOOTER.legal}
+      markLabel={FOOTER.markLabel}
+      socials={SOCIALS}
+      statement={FOOTER.statement}
+      wordmarkSrc={assetPath("/assets/wordmark-light.svg")}
     />
   </main>
 );
