@@ -21,7 +21,7 @@ import type { Metadata } from "next";
  * Primary navigation. Targets are placeholders until the sections exist.
  */
 const NAV_LINKS = [
-  { label: "About us", href: "#about" },
+  { label: "About us", href: assetPath("/about") },
   { label: "Pricing", href: assetPath("/pricing") },
   { label: "How it works", href: "#how-it-works" },
 ] satisfies NavLink[];
@@ -161,7 +161,7 @@ const FOOTER_COLUMNS = [
   },
   {
     heading: "Company",
-    links: [{ label: "About us", href: "#about" }],
+    links: [{ label: "About us", href: assetPath("/about") }],
   },
   {
     heading: "Support",

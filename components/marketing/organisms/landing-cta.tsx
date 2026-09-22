@@ -2,6 +2,8 @@ import { Heading } from "@/components/marketing/atoms/heading";
 import { Button } from "@/components/ui/button";
 
 type LandingCtaProperties = {
+  /** Optional label above the headline, when the page wants one. */
+  eyebrow?: string;
   headline: string;
   subheadline: string;
   ctaLabel: string;
@@ -23,6 +25,8 @@ const classes = {
   inner:
     "col-span-8 col-start-3 flex flex-col items-center gap-8 text-center max-lg:col-span-10 max-lg:col-start-2 max-md:col-span-12 max-md:col-start-1",
   copy: "flex flex-col items-center gap-5",
+  eyebrow:
+    "font-medium font-mono text-[11px] text-spectrum-peach uppercase tracking-[0.18em]",
   headline: "text-balance text-spectrum-gradient",
   subheadline:
     "max-w-[46ch] text-balance font-sans text-figure-body text-lg leading-[1.6] max-sm:text-base",
@@ -30,6 +34,7 @@ const classes = {
 } as const;
 
 export const LandingCta = ({
+  eyebrow,
   headline,
   subheadline,
   ctaLabel,
@@ -40,6 +45,7 @@ export const LandingCta = ({
       <div className={classes.grid}>
         <div className={classes.inner}>
           <div className={classes.copy}>
+            {eyebrow ? <p className={classes.eyebrow}>{eyebrow}</p> : null}
             <Heading as={2} className={classes.headline} level={1}>
               {headline}
             </Heading>
