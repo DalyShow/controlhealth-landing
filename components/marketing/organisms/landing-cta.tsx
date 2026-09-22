@@ -17,7 +17,7 @@ type LandingCtaProperties = {
  * weight on the page rather than of rank in the outline.
  */
 const classes = {
-  section: "w-full bg-figure-ground pt-16 pb-32 max-md:pt-8 max-md:pb-20",
+  section: "w-full bg-figure-ground pt-32 pb-64 max-md:pt-16 max-md:pb-40",
   shell: "mx-auto w-full max-w-page px-24 max-xl:px-10 max-sm:px-6",
   grid: "grid grid-cols-12 gap-x-6",
   inner:
