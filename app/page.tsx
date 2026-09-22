@@ -45,7 +45,7 @@ const HERO = {
  */
 const NAV_LINKS = [
   { label: "About us", href: "#about" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Pricing", href: assetPath("/pricing") },
   { label: "How it works", href: "#how-it-works" },
 ] satisfies NavLink[];
 
@@ -114,7 +114,7 @@ const FOOTER_COLUMNS = [
   {
     heading: "Product",
     links: [
-      { label: "Pricing", href: "#pricing" },
+      { label: "Pricing", href: assetPath("/pricing") },
       { label: "How it works", href: "#how-it-works" },
     ],
   },
