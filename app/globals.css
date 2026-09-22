@@ -40,9 +40,6 @@
   /* Heart rate sprite's icon. */
   --color-heartbeat: #eb4417;
 
-  /* Bright surface for the image-card row below the line-art callouts. */
-  --color-surface-bright: #fafafa;
-
   /* Line-art figure section below the hero. A deeper ground than the hero's
      gradient, with hairline strokes that sit only just above it. */
   --color-figure-ground: #0f1219;

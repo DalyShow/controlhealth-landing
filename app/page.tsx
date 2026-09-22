@@ -4,7 +4,6 @@ import { AiInputVisual } from "@/components/marketing/atoms/ai-input-visual";
 import { ConnectPlatformVisual } from "@/components/marketing/atoms/connect-platform-visual";
 import { HeroMedia } from "@/components/marketing/atoms/hero-media";
 import { LabPanelVisual } from "@/components/marketing/atoms/lab-panel-visual";
-import { ImageCard } from "@/components/marketing/molecules/image-card";
 import { RollingFigure } from "@/components/marketing/atoms/rolling-figure";
 import { TickingFigure } from "@/components/marketing/atoms/ticking-figure";
 import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
@@ -13,20 +12,10 @@ import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
-import { ImageCardSection } from "@/components/marketing/organisms/image-card-section";
 import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
 import { assetPath } from "@/lib/asset-path";
 import { Moon } from "lucide-react";
-
-type ImagePanel = {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
-  title: string;
-  body: string;
-};
 
 type Callout = {
   /** Plate number, which also selects the figure. */
@@ -94,37 +83,6 @@ const CALLOUT_VISUALS = {
   "03": <LabPanelVisual />,
 } as const;
 
-/**
- * Image row under the callouts. Copy and photography are both placeholders,
- * awaiting the real art direction.
- */
-const IMAGE_PANELS = [
-  {
-    src: "/media/card-placeholder-1.jpg",
-    alt: "Placeholder",
-    width: 900,
-    height: 1125,
-    title: "Placeholder headline one",
-    body: "Placeholder supporting copy for the first image card, awaiting the real text.",
-  },
-  {
-    src: "/media/card-placeholder-2.jpg",
-    alt: "Placeholder",
-    width: 900,
-    height: 1125,
-    title: "Placeholder headline two",
-    body: "Placeholder supporting copy for the second image card, awaiting the real text.",
-  },
-  {
-    src: "/media/card-placeholder-3.jpg",
-    alt: "Placeholder",
-    width: 900,
-    height: 1125,
-    title: "Placeholder headline three",
-    body: "Placeholder supporting copy for the third image card, awaiting the real text.",
-  },
-] satisfies ImagePanel[];
-
 const classes = {
   page: "relative w-full",
 } as const;
@@ -171,20 +129,6 @@ const LandingPage = () => (
         />
       ))}
     </CalloutSection>
-    <ImageCardSection>
-      {IMAGE_PANELS.map((panel) => (
-        <ImageCard
-          alt={panel.alt}
-          body={panel.body}
-          height={panel.height}
-          key={panel.src}
-          // Served from a project subpath on Pages, so the src needs prefixing.
-          src={assetPath(panel.src)}
-          title={panel.title}
-          width={panel.width}
-        />
-      ))}
-    </ImageCardSection>
   </main>
 );
 
