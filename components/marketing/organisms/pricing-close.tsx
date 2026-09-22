@@ -25,7 +25,7 @@ const classes = {
   headline: "text-balance text-spectrum-gradient",
   body: "max-w-[58ch] text-pretty font-sans text-figure-body text-lg leading-[1.65] max-sm:text-base",
   aside: "font-sans text-[15px] text-figure-body/80",
-  cta: "w-full max-w-[17rem] border-glint",
+  cta: "w-full max-w-[17rem] bg-primary-50 text-primary-950 hover:bg-primary-100",
 } as const;
 
 export const PricingClose = ({

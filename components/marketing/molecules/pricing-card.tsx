@@ -36,7 +36,7 @@ const classes = {
   features: "flex flex-1 flex-col gap-4",
   feature: "flex items-start gap-3 font-sans text-[15px] text-figure-body",
   tick: "mt-[3px] size-4 shrink-0 text-figure-accent",
-  cta: "w-full border-glint",
+  cta: "w-full bg-primary-50 text-primary-950 hover:bg-primary-100",
 } as const;
 
 export const PricingCard = ({ plan }: PricingCardProperties) => (

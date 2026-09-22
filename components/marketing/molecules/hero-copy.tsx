@@ -18,7 +18,7 @@ const classes = {
   headline: "text-balance text-center text-white",
   subheadline:
     "max-w-[29.8125rem] text-center font-sans text-base text-white uppercase leading-[1.5] tracking-[0.08em]",
-  cta: "w-full max-w-[17rem] border-glint shadow-cta",
+  cta: "w-full max-w-[17rem] bg-primary-50 text-primary-950 hover:bg-primary-100 shadow-cta",
 } as const;
 
 export const HeroCopy = ({
