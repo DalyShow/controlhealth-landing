@@ -22,7 +22,7 @@ const classes = {
   header:
     "absolute inset-x-0 top-0 z-10 flex items-center justify-between px-11 pt-[34px] max-sm:px-6",
   links: "-translate-x-1/2 absolute left-1/2 max-md:hidden",
-  cta: "gap-2",
+  cta: "gap-2 border-glint",
 } as const;
 
 export const LandingNav = ({

@@ -26,7 +26,7 @@ const classes = {
   headline: "text-balance text-spectrum-gradient",
   subheadline:
     "max-w-[46ch] text-balance font-sans text-figure-body text-lg leading-[1.6] max-sm:text-base",
-  cta: "w-full max-w-[17rem]",
+  cta: "w-full max-w-[17rem] border-glint",
 } as const;
 
 export const LandingCta = ({

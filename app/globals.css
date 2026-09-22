@@ -130,6 +130,72 @@
   }
 }
 
+/* An angle has to be registered before it can be animated; an unregistered
+   custom property is just a string and interpolates in steps. */
+@property --glint-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes glint-travel {
+  to {
+    --glint-angle: 360deg;
+  }
+}
+
+/**
+ * A lit arc of the brand spectrum that runs a button's edge.
+ *
+ * The ring is a conic gradient the width of the border, clipped to the border
+ * itself: two masks, one over the padding box and one over the whole element,
+ * composited so only the difference survives. Most of the sweep is
+ * transparent, so what travels is a short glint rather than a rainbow.
+ *
+ * The arc moves at a constant angular rate rather than a constant arc-length
+ * one, which on a button-shaped box means it covers the short ends about 40%
+ * faster than the long edges. Far too little to read as uneven, and the
+ * alternative is an SVG overlay per button.
+ */
+@utility border-glint {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--glint-angle),
+      transparent 0%,
+      transparent 58%,
+      var(--color-spectrum-peach) 72%,
+      var(--color-spectrum-blush) 80%,
+      var(--color-spectrum-mint) 88%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: glint-travel 3.2s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+    }
+  }
+}
+
 @utility text-spectrum-gradient {
   /* Paints the glyphs with the ramp rather than the box behind them. The
      prefixed property is still required for Safari. */
