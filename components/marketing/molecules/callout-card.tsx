@@ -12,13 +12,18 @@ type CalloutCardProperties = {
  * One callout: a plate label, a line-art illustration, then the claim and a
  * sentence of support.
  *
- * Four columns wide on the page grid, with no padding of its own — the
- * gutters do that work, so the copy and the drawing both start on a column.
- * The illustration sits in a fixed-height well so the three cards keep their
- * titles on a shared baseline whatever their figures measure.
+ * Four columns wide on the page grid. The card box spans the columns, but its
+ * contents are inset so neither the drawing nor the copy runs into the rules
+ * on either side — the inset matches the drawing's own width, so the figure
+ * and the sentence beneath it share an edge. The illustration sits in a
+ * fixed-height well so the three cards keep their titles on a shared baseline
+ * whatever their figures measure.
  */
 const classes = {
-  root: "col-span-4 flex flex-col gap-10 max-md:col-span-12",
+  // The inset is a fixed measure, so it eats proportionally more of a
+  // narrow column. It tapers as the columns close up, and goes entirely
+  // once the cards stack and there are no rules left to clear.
+  root: "col-span-4 flex flex-col gap-10 px-7 max-xl:px-4 max-md:col-span-12 max-md:px-0",
   label:
     "font-medium font-mono text-figure-label text-xs uppercase tracking-[0.18em]",
   // Stacked in one column there is no shared baseline to hold, so the well

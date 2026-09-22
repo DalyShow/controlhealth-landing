@@ -26,12 +26,13 @@ const classes = {
     "font-display font-medium text-[clamp(1.875rem,1.35rem+1.6vw,2.75rem)] text-primary-foreground leading-[1.15]",
   lede: "text-pretty font-sans text-figure-body text-lg leading-[1.6] max-sm:text-base",
   /**
-   * The rule belongs in the middle of the gutter, not hard against the next
-   * card. Pulling each card half a gutter left puts its border there, and an
-   * equal padding puts the content back on its column.
+   * The rule belongs to the gutter rather than to either card, so it is drawn
+   * half a gutter to the left of the card box instead of being that box's
+   * border. That keeps it off the card's own padding, which is free to inset
+   * the contents as far as it likes without dragging the rule along with it.
    */
   cards:
-    "grid grid-cols-12 gap-x-6 [&>*+*]:-ml-3 [&>*+*]:border-figure-rule [&>*+*]:border-l [&>*+*]:pl-3 max-md:gap-y-16 max-md:[&>*+*]:ml-0 max-md:[&>*+*]:border-l-0 max-md:[&>*+*]:border-t max-md:[&>*+*]:pt-16 max-md:[&>*+*]:pl-0",
+    "grid grid-cols-12 gap-x-6 [&>*+*]:relative [&>*+*]:before:absolute [&>*+*]:before:inset-y-0 [&>*+*]:before:-left-3 [&>*+*]:before:w-px [&>*+*]:before:bg-figure-rule [&>*+*]:before:content-[''] max-md:gap-y-16 max-md:[&>*+*]:border-figure-rule max-md:[&>*+*]:border-t max-md:[&>*+*]:pt-16 max-md:[&>*+*]:before:hidden",
 } as const;
 
 export const CalloutSection = ({
