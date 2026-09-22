@@ -26,6 +26,20 @@
      across the three are calibrated against this width. */
   --container-figure: 340px;
 
+  /* Brand palette ramp. Mirrors the design system; the light button fill
+     and its ink are the two ends of it. */
+  --color-primary-50: #f2f6fc;
+  --color-primary-100: #e2eaf7;
+  --color-primary-200: #ccdbf1;
+  --color-primary-300: #a9c4e7;
+  --color-primary-400: #80a5da;
+  --color-primary-500: #6287cf;
+  --color-primary-600: #4e6ec2;
+  --color-primary-700: #445cb1;
+  --color-primary-800: #3c4d91;
+  --color-primary-900: #344274;
+  --color-primary-950: #15192a;
+
   /* Brand spectrum: the coral-to-mint ramp, used to paint display type. */
   --color-spectrum-peach: #fab8a7;
   --color-spectrum-blush: #fcd1de;
