@@ -6,10 +6,18 @@ type HeroMediaProperties = {
   src: string;
   /** Still shown before a video has data; ignored for image sources. */
   poster?: string;
+  /**
+   * How far up the layer fades once it is ready, 0 to 1. Lower it when the
+   * footage is busy enough to compete with the copy sitting over it.
+   */
+  opacity?: number;
 };
 
 /** Sources with these extensions render as video; anything else as an image. */
 const VIDEO_EXTENSIONS = [".mp4", ".webm", ".ogv", ".mov"] satisfies string[];
+
+/** Where the layer settles unless a page asks for something quieter. */
+const DEFAULT_OPACITY = 0.9;
 
 /** HTMLMediaElement.HAVE_ENOUGH_DATA — can play through without stalling. */
 const HAVE_ENOUGH_DATA = 4;
@@ -33,17 +41,20 @@ const isVideoSource = (src: string) =>
  * with no controls and never intercepts pointer events.
  *
  * It holds at zero opacity until the browser reports it can play through
- * without stalling, then fades up to 90%, so a part-buffered first frame never
- * flashes over the gradient.
+ * without stalling, then fades up, so a part-buffered first frame never
+ * flashes over the gradient. How far up is the caller's to set, because it
+ * depends on how busy the footage underneath the copy is.
  */
 const classes = {
-  root: "pointer-events-none absolute inset-0 overflow-hidden opacity-0 mix-blend-overlay transition-opacity duration-700 ease-out motion-reduce:transition-none",
-  rootReady:
-    "pointer-events-none absolute inset-0 overflow-hidden opacity-90 mix-blend-overlay transition-opacity duration-700 ease-out motion-reduce:transition-none",
+  root: "pointer-events-none absolute inset-0 overflow-hidden mix-blend-overlay transition-opacity duration-700 ease-out motion-reduce:transition-none",
   media: "size-full object-cover",
 } as const;
 
-export const HeroMedia = ({ src, poster }: HeroMediaProperties) => {
+export const HeroMedia = ({
+  src,
+  poster,
+  opacity = DEFAULT_OPACITY,
+}: HeroMediaProperties) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -80,7 +91,8 @@ export const HeroMedia = ({ src, poster }: HeroMediaProperties) => {
   return (
     <div
       aria-hidden="true"
-      className={isReady ? classes.rootReady : classes.root}
+      className={classes.root}
+      style={{ opacity: isReady ? opacity : 0 }}
     >
       {isVideoSource(src) ? (
         <video

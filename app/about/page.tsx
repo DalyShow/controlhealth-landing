@@ -27,6 +27,9 @@ const LOCKUP_SRC = "/assets/lockup-light.svg";
 const HERO_MEDIA_SRC = "/media/video-4.mp4";
 const WORDMARK_SRC = "/assets/wordmark-light.svg";
 
+/** Quieter than the landing hero: this footage is a face filling the frame. */
+const HERO_MEDIA_OPACITY = 0.6;
+
 const HERO = {
   eyebrow: "Our story",
   headline: "A health platform built for you, not the system.",
@@ -165,7 +168,7 @@ const AboutPage = () => (
       eyebrow={HERO.eyebrow}
       headline={HERO.headline}
       lede={HERO.lede}
-      media={<HeroMedia src={assetPath(HERO_MEDIA_SRC)} />}
+      media={<HeroMedia opacity={HERO_MEDIA_OPACITY} src={assetPath(HERO_MEDIA_SRC)} />}
     />
     <ShowcaseSection
       body={PLATFORM.body}
