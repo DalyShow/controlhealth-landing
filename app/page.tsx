@@ -152,6 +152,8 @@ const LandingPage = () => (
       ctaLabel={NAV_CTA_LABEL}
       links={NAV_LINKS}
       logo={<BrandLockup src={assetPath("/assets/lockup-light.svg")} />}
+      logoHref={assetPath("/")}
+      logoLabel="Control Health, back to home"
     />
     <LandingHero
       ctaLabel={HERO.ctaLabel}

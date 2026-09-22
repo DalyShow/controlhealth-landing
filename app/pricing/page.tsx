@@ -198,6 +198,8 @@ const PricingPage = () => (
       ctaLabel={NAV_CTA_LABEL}
       links={NAV_LINKS}
       logo={<BrandLockup src={assetPath(LOCKUP_SRC)} />}
+      logoHref={assetPath("/")}
+      logoLabel="Control Health, back to home"
     />
     <PricingHero
       blurb={HERO.blurb}
