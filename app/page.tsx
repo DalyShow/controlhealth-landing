@@ -10,6 +10,7 @@ import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
 import type { NavLink } from "@/components/marketing/molecules/nav-links";
 import { StatBar } from "@/components/marketing/molecules/stat-bar";
 import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
+import type { TrustItem } from "@/components/marketing/molecules/trust-row";
 import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
@@ -21,8 +22,12 @@ import {
 } from "@/components/marketing/organisms/landing-footer";
 import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
+import { ScanHero } from "@/components/marketing/organisms/scan-hero";
 import { assetPath } from "@/lib/asset-path";
-import { Moon } from "lucide-react";
+import { Activity, LockKeyhole, Moon, Shield } from "lucide-react";
+import type { ReactNode } from "react";
+
+type HeroVariant = "scan" | "media";
 
 type Callout = {
   /** Plate number, which also selects the figure. */
@@ -34,6 +39,27 @@ type Callout = {
 /**
  * Hero copy for the personalized-panel landing page.
  */
+/**
+ * Which hero the page leads with. Both stay built and wired: the media hero
+ * with its footage, stat bar and biomarker strip is kept, not removed, so
+ * switching back is this one line.
+ */
+const ACTIVE_HERO: HeroVariant = "scan";
+
+/** Copy for the scan hero, from the Figma frame (1290:42929). */
+const SCAN_HERO = {
+  headline: "Measure what matters",
+  body: "Control Health is a personalized health intelligence platform that brings together your health records and wearable data to help you customize lab tests that matter most to you.",
+  ctaLabel: "Get the Personalized Panel",
+} as const;
+
+/** The reassurances along the bottom of the scan hero. */
+const TRUST = [
+  { icon: Shield, label: "HIPAA-Aligned" },
+  { icon: LockKeyhole, label: "Private by design" },
+  { icon: Activity, label: "60k+ providers" },
+] satisfies TrustItem[];
+
 const HERO = {
   headline: "Measure what matters.",
   subheadline:
@@ -143,19 +169,21 @@ const SOCIALS = [
   { network: "tiktok", href: "https://tiktok.com" },
 ] satisfies SocialLink[];
 
-const classes = {
-  page: "relative w-full",
-} as const;
-
-const LandingPage = () => (
-  <main className={classes.page}>
-    <LandingNav
-      ctaLabel={NAV_CTA_LABEL}
-      links={NAV_LINKS}
-      logo={<BrandLockup src={assetPath("/assets/lockup-light.svg")} />}
-      logoHref={assetPath("/")}
-      logoLabel="Control Health, back to home"
+/**
+ * Both heroes, built. Only the active one renders; the other is a description
+ * of an element, not a mounted component, so keeping it costs nothing.
+ */
+const HEROES = {
+  scan: (
+    <ScanHero
+      body={SCAN_HERO.body}
+      ctaLabel={SCAN_HERO.ctaLabel}
+      figureSrc={assetPath("/media/hero-figure.webp")}
+      headline={SCAN_HERO.headline}
+      trust={TRUST}
     />
+  ),
+  media: (
     <LandingHero
       ctaLabel={HERO.ctaLabel}
       headline={HERO.headline}
@@ -185,6 +213,23 @@ const LandingPage = () => (
       }
       subheadline={HERO.subheadline}
     />
+  ),
+} satisfies Record<HeroVariant, ReactNode>;
+
+const classes = {
+  page: "relative w-full",
+} as const;
+
+const LandingPage = () => (
+  <main className={classes.page}>
+    <LandingNav
+      ctaLabel={NAV_CTA_LABEL}
+      links={NAV_LINKS}
+      logo={<BrandLockup src={assetPath("/assets/lockup-light.svg")} />}
+      logoHref={assetPath("/")}
+      logoLabel="Control Health, back to home"
+    />
+    {HEROES[ACTIVE_HERO]}
     <CalloutSection body={SECTION.body} headline={SECTION.headline}>
       {CALLOUTS.map((callout, index) => (
         <CalloutCard
