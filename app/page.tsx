@@ -178,7 +178,7 @@ const HEROES = {
     <ScanHero
       body={SCAN_HERO.body}
       ctaLabel={SCAN_HERO.ctaLabel}
-      figureSrc={assetPath("/media/hero-figure.webp")}
+      figureSrc={assetPath("/media/hero-figure-2.webp")}
       headline={SCAN_HERO.headline}
       trust={TRUST}
     />
