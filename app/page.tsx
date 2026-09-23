@@ -158,7 +158,12 @@ const LandingPage = () => (
     <LandingHero
       ctaLabel={HERO.ctaLabel}
       headline={HERO.headline}
-      media={<HeroMedia src={assetPath("/media/video-3.mp4")} />}
+      media={
+        <HeroMedia
+          poster={assetPath("/media/video-3-poster.webp")}
+          src={assetPath("/media/video-3.mp4")}
+        />
+      }
       sprites={
         <>
           <StatSprite

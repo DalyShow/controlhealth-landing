@@ -25,6 +25,7 @@ const NAV_LINKS = [
 const NAV_CTA_LABEL = "Join the waitlist";
 const LOCKUP_SRC = "/assets/lockup-light.svg";
 const HERO_MEDIA_SRC = "/media/video-4.mp4";
+const HERO_MEDIA_POSTER = "/media/video-4-poster.webp";
 const WORDMARK_SRC = "/assets/wordmark-light.svg";
 
 /** Quieter than the landing hero: this footage is a face filling the frame. */
@@ -168,7 +169,13 @@ const AboutPage = () => (
       eyebrow={HERO.eyebrow}
       headline={HERO.headline}
       lede={HERO.lede}
-      media={<HeroMedia opacity={HERO_MEDIA_OPACITY} src={assetPath(HERO_MEDIA_SRC)} />}
+      media={
+        <HeroMedia
+          opacity={HERO_MEDIA_OPACITY}
+          poster={assetPath(HERO_MEDIA_POSTER)}
+          src={assetPath(HERO_MEDIA_SRC)}
+        />
+      }
     />
     <ShowcaseSection
       body={PLATFORM.body}
