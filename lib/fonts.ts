@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 // Playfair is the display face for the marketing site; Geist carries body,
 // UI and labels.
 const playfair = Playfair_Display({
-  weight: ["400", "500"],
+  // Regular only. Heavier cuts read too thick at display sizes.
+  weight: ["400"],
   subsets: ["latin"],
   variable: "--font-playfair",
 });

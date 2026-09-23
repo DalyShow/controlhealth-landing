@@ -13,7 +13,10 @@ import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import type { TrustItem } from "@/components/marketing/molecules/trust-row";
 import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
-import { CaseStudySection } from "@/components/marketing/organisms/case-study-section";
+import {
+  type CaseStudySlide,
+  CaseStudySection,
+} from "@/components/marketing/organisms/case-study-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
 import { LandingCta } from "@/components/marketing/organisms/landing-cta";
 import {
@@ -25,6 +28,7 @@ import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
 import { ScanHero } from "@/components/marketing/organisms/scan-hero";
 import { assetPath } from "@/lib/asset-path";
+import type { CaseStudyResults } from "@/lib/biomarkers";
 import { Activity, LockKeyhole, Moon, Shield } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -55,6 +59,101 @@ const SHOW_LOWER_SECTIONS = false;
 
 /** Who the first case study follows. */
 const CASE_STUDY_INTRO = "Sarah, 41, avid runner";
+
+/**
+ * Sarah's panel, from the case study. Only the results it states: serum iron,
+ * vitamin D and the metabolic markers were tested, but no result is given, so
+ * they are not pinned. "Thyroid markers" is read as TSH and Free T4. Health
+ * copy on a marketing page — needs the same clinical review as the forty.
+ */
+const SARAH = {
+  person: "Sarah",
+  results: {
+    // What explains her fatigue.
+    Hemoglobin: {
+      status: "finding",
+      reading: "Mildly low",
+      meaning: "Her blood is carrying slightly less oxygen.",
+    },
+    MCV: {
+      status: "finding",
+      reading: "Low",
+      meaning:
+        "Her red blood cells are smaller than normal, a pattern that points to iron.",
+    },
+    Ferritin: {
+      status: "finding",
+      reading: "Low",
+      meaning: "Her iron stores are depleted.",
+    },
+    "Total iron-binding capacity": {
+      status: "finding",
+      reading: "High",
+      meaning: "Raised, a common sign her body is short of iron.",
+    },
+    "Transferrin saturation": {
+      status: "finding",
+      reading: "Low",
+      meaning: "Little of the iron in her blood is available to carry.",
+    },
+    // What it is not.
+    TSH: {
+      status: "clear",
+      reading: "In range",
+      meaning: "Points away from an underactive thyroid.",
+    },
+    "Free T4": {
+      status: "clear",
+      reading: "In range",
+      meaning: "Her thyroid hormone is where it should be.",
+    },
+    "Vitamin B12": {
+      status: "clear",
+      reading: "In range",
+      meaning: "Points away from B12 deficiency as a cause of her anemia.",
+    },
+    Folate: {
+      status: "clear",
+      reading: "In range",
+      meaning: "Points away from folate deficiency as a cause of her anemia.",
+    },
+    "hs-CRP": {
+      status: "clear",
+      reading: "In range",
+      meaning:
+        "No sign of inflammation, so her low ferritin can be taken at face value.",
+    },
+  },
+} satisfies CaseStudyResults;
+
+/** The first case study's headline and body. */
+const CASE_STUDY_MESSAGE = {
+  headline: "The Why Runs Deeper.",
+  subheadline:
+    "One comprehensive at-home biomarker panel connects your wearable data to the biology behind it",
+} as const;
+
+/**
+ * The slides the case study shrinks into the first of. Placeholder copy and
+ * stills while the slides are designed.
+ */
+const CASE_STUDY_SLIDES = [
+  {
+    headline: "Headline goes here",
+    subheadline: "Subheadline goes here",
+    image: assetPath("/media/video-4-poster.webp"),
+  },
+  {
+    headline: "Headline goes here",
+    subheadline: "Subheadline goes here",
+    image: assetPath("/media/about-believe.webp"),
+  },
+  {
+    headline: "Headline goes here",
+    subheadline: "Subheadline goes here",
+    image: assetPath("/media/about-data.webp"),
+  },
+] satisfies CaseStudySlide[];
 
 /** Copy for the scan hero, from the Figma frame (1290:42929). */
 const SCAN_HERO = {
@@ -232,6 +331,8 @@ const HEROES = {
  */
 const CASE_STUDY = (
   <CaseStudySection
+    caseStudy={SARAH}
+    headline={CASE_STUDY_MESSAGE.headline}
     intro={CASE_STUDY_INTRO}
     media={
       <HeroMedia
@@ -239,24 +340,30 @@ const CASE_STUDY = (
         src={assetPath("/media/video-3.mp4")}
       />
     }
+    slides={CASE_STUDY_SLIDES}
     stats={
+      // Keyed: the section is a client component, and a fragment handed to
+      // one from the server arrives as a list.
       <>
         <StatSprite
           beatMs={STEP_BEAT_MS}
           delta="12%"
           figure={<TickingFigure base={14_804} />}
           icon={<FootstepsIcon />}
+          key="steps"
           label="Steps today"
         />
-        <HeartRateSprite restingBpm={RESTING_BPM} />
+        <HeartRateSprite key="heart-rate" restingBpm={RESTING_BPM} />
         <StatSprite
           delta="+5m"
           figure={<RollingFigure from="5h 00m" value="6h 52m" />}
           icon={<Moon strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          key="sleep"
           label="Sleep last night"
         />
       </>
     }
+    subheadline={CASE_STUDY_MESSAGE.subheadline}
   />
 );
 

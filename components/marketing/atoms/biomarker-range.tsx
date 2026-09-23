@@ -5,9 +5,16 @@ import {
   BIOMARKER_COUNT,
   BIOMARKER_SYSTEMS,
   BIOMARKERS,
+  type BiomarkerResult,
+  type CaseStudyResults,
 } from "@/lib/biomarkers";
 import { createTickPlayer } from "@/lib/tick-sound";
-import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
+import type {
+  CSSProperties,
+  KeyboardEvent,
+  PointerEvent,
+  ReactNode,
+} from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
@@ -20,7 +27,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
  * ticks are short. What it gives back is headroom: the readout sits lower and
  * the hero's stat bar keeps the band above it.
  */
-const BAR_HEIGHT = 56;
+const BAR_HEIGHT = 36;
 
 /**
  * Bars per marker. Four gives a hover target of roughly fourteen pixels
@@ -39,6 +46,9 @@ const NARROW_QUERY = "(max-width: 767px)";
 
 /** How far the marker under the pointer rises, in pixels. */
 const GROUP_LIFT = 16;
+
+/** How far above the ink a case study's pin sits. */
+const PIN_GAP = 10;
 
 /** Falloff either side of the marker, indexed by distance from its edge. */
 const LIFT = [11, 8, 5, 3, 2] satisfies number[];
@@ -116,9 +126,9 @@ const classes = {
 
   // Sits over the strip and slides along it to whichever marker is active.
   // Its bottom edge, the tip of the hairline, stops well clear of the bars
-  // at full lift (56 + 16 = 72px), so nothing in it ever touches them.
+  // at full lift (36 + 16 = 52px), so nothing in it ever touches them.
   readout:
-    "pointer-events-none absolute bottom-[124px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[108px] max-md:bottom-[108px] max-md:w-[330px]",
+    "pointer-events-none absolute bottom-[104px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[88px] max-md:bottom-[88px] max-md:w-[330px]",
   // One of these, never both: gliding between markers, or fading in place
   // on arrival.
   readoutGlide:
@@ -133,10 +143,25 @@ const classes = {
     "font-medium font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--tone)] max-md:text-[11px]",
   name: "mt-2 font-display text-[30px] text-primary-foreground leading-[1.15] max-md:text-[24px] [@media(max-height:780px)]:text-[26px]",
   note: "mt-2 text-pretty font-sans text-[16px] text-figure-body leading-[1.5] max-md:text-[14px] [@media(max-height:780px)]:text-[15px]",
-  tagRow: "mt-3.5 [@media(max-height:780px)]:mt-3",
+  tagRow:
+    "mt-3.5 flex flex-wrap items-center justify-center gap-2 [@media(max-height:780px)]:mt-3",
+  // A person's reading, beside the generic standard-panel tag. A finding is
+  // filled with its system's tone; a clear result is only outlined.
+  resultFinding:
+    "inline-block rounded-full bg-[var(--tone)] px-3 py-1.5 font-mono text-[12px] text-primary-950 uppercase tracking-[0.1em] max-md:text-[11px]",
+  resultClear:
+    "inline-block rounded-full border border-white/40 px-3 py-1.5 font-mono text-[12px] text-white/85 uppercase tracking-[0.1em] max-md:text-[11px]",
   tag: "inline-block rounded-full border px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.1em] max-md:text-[11px]",
   tagCovered: "border-primary-100/45 text-primary-100",
   tagMissing: "border-[var(--tone)] bg-[var(--tone)]/12 text-[var(--tone)]",
+  // The pins share the track's box, so a bar's offset within the track is its
+  // position here too. They cannot live inside the track: its children are
+  // the bars, and bars are found by their index among them.
+  pins: "-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 h-full w-full max-w-page",
+  pinFinding:
+    "absolute size-[9px] rounded-full bg-[var(--tone)] shadow-[0_0_10px_var(--tone)] transition-transform duration-[340ms] max-md:size-[7px] motion-reduce:transition-none",
+  pinClear:
+    "absolute size-[9px] rounded-full border-[1.5px] border-white/70 transition-transform duration-[340ms] max-md:size-[7px] motion-reduce:transition-none",
   // Hairline dropping from the readout toward the marker it describes. It is
   // long on purpose: it lifts the text well clear of the bars while still
   // reaching down to the one being read. `block` matters: it is a span, and
@@ -154,7 +179,180 @@ const barClass = (covered: boolean, isActive: boolean) => {
   return covered ? classes.barCovered : classes.bar;
 };
 
-export const BiomarkerRange = () => {
+/**
+ * Where each tested marker's pin goes: midway between the marker's two middle
+ * bars, read off the laid-out bars rather than derived, because the strip
+ * spaces its bars to fill whatever width it is given.
+ */
+const measurePinPositions = (
+  track: HTMLElement | null,
+  caseStudy: CaseStudyResults | undefined,
+  barsPerMarker: number
+) => {
+  const positions: Record<number, number> = {};
+
+  if (!(track && caseStudy)) {
+    return positions;
+  }
+
+  const half = barsPerMarker / 2;
+
+  for (const [index, marker] of BIOMARKERS.entries()) {
+    const left = track.children[index * barsPerMarker + half - 1];
+    const right = track.children[index * barsPerMarker + half];
+    const tested = Boolean(caseStudy.results[marker.name]);
+
+    if (tested && left instanceof HTMLElement && right instanceof HTMLElement) {
+      positions[index] =
+        (left.offsetLeft + left.offsetWidth + right.offsetLeft) / 2;
+    }
+  }
+
+  return positions;
+};
+
+type CaseStudyPinsProperties = {
+  caseStudy: CaseStudyResults | undefined;
+  pinX: Record<number, number>;
+  /** The marker being read, whose pin rides up with it. */
+  activeIndex: number | null;
+  /** Reduced motion: pins hold their place rather than riding up. */
+  still: boolean;
+};
+
+/** A pin above each marker the case study covers: filled for a finding. */
+const CaseStudyPins = ({
+  caseStudy,
+  pinX,
+  activeIndex,
+  still,
+}: CaseStudyPinsProperties) => {
+  if (!caseStudy) {
+    return null;
+  }
+
+  const lifted = still ? null : activeIndex;
+  const pins: ReactNode[] = [];
+
+  for (const [key, x] of Object.entries(pinX)) {
+    const index = Number(key);
+    const marker = BIOMARKERS[index];
+    const pinned = marker && caseStudy.results[marker.name];
+
+    if (!(marker && pinned)) {
+      continue;
+    }
+
+    const style: CSSProperties = {
+      left: `${x}px`,
+      bottom: `${BAR_HEIGHT + PIN_GAP}px`,
+      transform: `translate(-50%, ${index === lifted ? -GROUP_LIFT : 0}px)`,
+      transitionTimingFunction: "var(--ease-pin)",
+      "--tone": BIOMARKER_SYSTEMS[marker.system].tone,
+    } as CSSProperties;
+
+    pins.push(
+      <span
+        className={
+          pinned.status === "finding" ? classes.pinFinding : classes.pinClear
+        }
+        key={marker.name}
+        style={style}
+      />
+    );
+  }
+
+  return (
+    <div aria-hidden="true" className={classes.pins}>
+      {pins}
+    </div>
+  );
+};
+
+type ResultTagProperties = {
+  person: string | undefined;
+  result: BiomarkerResult | undefined;
+};
+
+/** The person's reading, shown beside the generic standard-panel tag. */
+const ResultTag = ({ person, result }: ResultTagProperties) => {
+  if (!(person && result)) {
+    return null;
+  }
+
+  return (
+    <span
+      className={
+        result.status === "finding"
+          ? classes.resultFinding
+          : classes.resultClear
+      }
+    >
+      {person} · {result.reading}
+    </span>
+  );
+};
+
+type Marker = (typeof BIOMARKERS)[number];
+
+/** What a screen reader hears for a marker, as one sentence. */
+const describeMarker = (
+  marker: Marker,
+  caseStudy: CaseStudyResults | undefined
+) => {
+  const result = caseStudy?.results[marker.name];
+  const detail =
+    result && caseStudy
+      ? `${caseStudy.person}: ${result.reading}. ${result.meaning}`
+      : marker.note;
+  const coverage = marker.covered
+    ? "In a standard panel."
+    : "Not in a standard panel.";
+
+  return `${marker.name}. ${BIOMARKER_SYSTEMS[marker.system].label}. ${detail} ${coverage}`;
+};
+
+type ReadoutContentProperties = {
+  marker: Marker | null;
+  caseStudy: CaseStudyResults | undefined;
+};
+
+/**
+ * The readout's text. For a marker the case study covers, what it meant for
+ * this person takes the generic note's place, so the readout keeps its
+ * height, and their reading leads the tags.
+ */
+const ReadoutContent = ({ marker, caseStudy }: ReadoutContentProperties) => {
+  const system = marker ? BIOMARKER_SYSTEMS[marker.system] : null;
+  const result = marker ? caseStudy?.results[marker.name] : undefined;
+  const covered = Boolean(marker?.covered);
+
+  return (
+    <>
+      <p className={classes.system}>{system?.label}</p>
+      <p className={classes.name}>{marker?.name}</p>
+      <p className={classes.note}>{result?.meaning ?? marker?.note}</p>
+      <p className={classes.tagRow}>
+        <ResultTag person={caseStudy?.person} result={result} />
+        <span
+          className={`${classes.tag} ${covered ? classes.tagCovered : classes.tagMissing}`}
+        >
+          {covered ? "in a standard panel" : "not in a standard panel"}
+        </span>
+      </p>
+    </>
+  );
+};
+
+type BiomarkerRangeProperties = {
+  /**
+   * One person's results, laid over the generic strip: a pin above each
+   * marker they were tested on, and their reading in its readout.
+   */
+  caseStudy?: CaseStudyResults;
+};
+
+export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const trackBoxRef = useRef<{ left: number; width: number } | null>(null);
   const activeIndexRef = useRef<number | null>(null);
@@ -222,6 +420,31 @@ export const BiomarkerRange = () => {
 
     return () => window.removeEventListener("resize", measureTrack);
   }, [measureTrack]);
+
+  // Where each tested marker's pin goes: midway between the marker's two
+  // middle bars, read off the laid-out bars rather than derived, because the
+  // strip spaces its bars to fill whatever width it is given.
+  const [pinX, setPinX] = useState<Record<number, number>>({});
+
+  const measurePins = useCallback(() => {
+    setPinX(measurePinPositions(trackRef.current, caseStudy, barsPerMarker));
+  }, [barsPerMarker, caseStudy]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+
+    if (!track) {
+      return;
+    }
+
+    measurePins();
+
+    const observer = new ResizeObserver(measurePins);
+
+    observer.observe(track);
+
+    return () => observer.disconnect();
+  }, [measurePins]);
 
   const goToMarker = useCallback(
     (index: number) => {
@@ -373,14 +596,8 @@ export const BiomarkerRange = () => {
 
   const active = activeIndex === null ? null : BIOMARKERS[activeIndex];
   const activeSystem = active ? BIOMARKER_SYSTEMS[active.system] : null;
-
-  // What a screen reader hears when the value moves. Built here rather than
-  // inline so the whole announcement reads as one sentence.
-  const valueText = active
-    ? `${active.name}. ${activeSystem?.label}. ${active.note} ${
-        active.covered ? "In a standard panel." : "Not in a standard panel."
-      }`
-    : undefined;
+  // What a screen reader hears when the value moves, as one sentence.
+  const valueText = active ? describeMarker(active, caseStudy) : undefined;
 
   // Present only while a marker is up, so the hero can dim what sits behind
   // the readout without this component knowing anything about it.
@@ -398,18 +615,7 @@ export const BiomarkerRange = () => {
         className={`${classes.readout} ${isGliding ? classes.readoutGlide : classes.readoutJump} ${active ? classes.readoutOn : classes.readoutRest}`}
         style={readoutStyle}
       >
-        <p className={classes.system}>{activeSystem?.label}</p>
-        <p className={classes.name}>{active?.name}</p>
-        <p className={classes.note}>{active?.note}</p>
-        <p className={classes.tagRow}>
-          <span
-            className={`${classes.tag} ${active?.covered ? classes.tagCovered : classes.tagMissing}`}
-          >
-            {active?.covered
-              ? "in a standard panel"
-              : "not in a standard panel"}
-          </span>
-        </p>
+        <ReadoutContent caseStudy={caseStudy} marker={active ?? null} />
         <span className={classes.leader} />
       </div>
 
@@ -464,6 +670,13 @@ export const BiomarkerRange = () => {
             );
           })}
         </div>
+
+        <CaseStudyPins
+          activeIndex={activeIndex}
+          caseStudy={caseStudy}
+          pinX={pinX}
+          still={prefersReducedMotion}
+        />
       </div>
     </>
   );

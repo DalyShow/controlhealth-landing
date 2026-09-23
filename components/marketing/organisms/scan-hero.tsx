@@ -52,7 +52,7 @@ const classes = {
   image: "relative block size-full object-contain opacity-[0.42]",
   copy: "-translate-x-1/2 -translate-y-1/2 absolute top-[59%] left-1/2 z-[4] flex w-[min(1100px,calc(100%-48px))] flex-col items-center text-center",
   headline:
-    "animate-hero-headline whitespace-nowrap font-semibold text-[clamp(2.75rem,1rem+5vw,5.1rem)] text-spectrum-gradient capitalize leading-[1.371] tracking-[-0.01em] max-md:whitespace-normal motion-reduce:animate-none",
+    "animate-hero-headline whitespace-nowrap text-[clamp(2.75rem,1rem+5vw,5.1rem)] text-spectrum-gradient capitalize leading-[1.371] tracking-[-0.01em] max-md:whitespace-normal motion-reduce:animate-none",
   body: "mt-5 max-w-[632px] animate-hero-body text-pretty font-sans text-[18px] text-primary-foreground leading-[26px] max-md:px-2 max-md:text-base max-md:leading-6 motion-reduce:animate-none",
   cta: "mt-8 w-full max-w-[17rem] animate-hero-button border border-hero-glass-rule shadow-cta hover:border-hero-glass-edge motion-reduce:animate-none",
   trust:

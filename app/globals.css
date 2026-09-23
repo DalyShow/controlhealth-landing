@@ -62,7 +62,7 @@
   --color-marker-metabolic: #fcd1de;
   --color-marker-inflammation: #81ffd6;
   --color-marker-hormone: #c3b5e8;
-  --color-marker-nutrient: #efd9b4;
+  --color-marker-blood: #efd9b4;
   --color-marker-organ: #a9c4e7;
 
   /* Decelerate hard, so motion arrives rather than drifts. */

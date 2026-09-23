@@ -3,7 +3,7 @@ export type BiomarkerSystemKey =
   | "metabolic"
   | "inflammation"
   | "hormone"
-  | "nutrient"
+  | "blood"
   | "organ";
 
 export type BiomarkerSystem = {
@@ -46,7 +46,7 @@ export const BIOMARKER_SYSTEMS = {
     label: "Thyroid & hormones",
     tone: "var(--color-marker-hormone)",
   },
-  nutrient: { label: "Nutrients", tone: "var(--color-marker-nutrient)" },
+  blood: { label: "Blood & nutrients", tone: "var(--color-marker-blood)" },
   organ: { label: "Kidney & liver", tone: "var(--color-marker-organ)" },
 } as const satisfies Record<BiomarkerSystemKey, BiomarkerSystem>;
 
@@ -95,12 +95,6 @@ export const BIOMARKERS = [
     covered: false,
     note: "Largely genetic and stable for life. One measurement tells you something a lifetime of lipid panels will not.",
   },
-  {
-    system: "cardiovascular",
-    name: "Omega-3 index",
-    covered: false,
-    note: "The share of omega-3 in your red cell membranes. Reflects months of intake, not last week's.",
-  },
 
   // Metabolic
   {
@@ -132,12 +126,6 @@ export const BIOMARKERS = [
     name: "Uric acid",
     covered: false,
     note: "A by-product of purine metabolism, tied to both joint and metabolic health.",
-  },
-  {
-    system: "metabolic",
-    name: "HOMA-IR",
-    covered: false,
-    note: "Derived from fasting glucose and insulin together. An estimate of insulin resistance.",
   },
 
   // Inflammation
@@ -205,53 +193,66 @@ export const BIOMARKERS = [
   },
   {
     system: "hormone",
-    name: "DHEA-S",
-    covered: false,
-    note: "An adrenal precursor hormone that declines steadily with age.",
-  },
-  {
-    system: "hormone",
     name: "Estradiol",
     covered: false,
     note: "The principal estrogen, relevant across the lifespan in both sexes.",
   },
 
-  // Nutrients
+  // Blood & nutrients — the blood count's red-cell measures, iron status,
+  // and the vitamins that also cause anemia, together in one run.
   {
-    system: "nutrient",
-    name: "Vitamin D, 25-OH",
-    covered: false,
-    note: "The storage form. Low levels are common and entirely invisible without measuring.",
+    system: "blood",
+    name: "Hemoglobin",
+    covered: true,
+    note: "The protein in red blood cells that carries oxygen. Part of every standard blood count.",
   },
   {
-    system: "nutrient",
-    name: "Vitamin B12",
-    covered: false,
-    note: "Needed for nerve function and red cell production.",
+    system: "blood",
+    name: "MCV",
+    covered: true,
+    note: "The average size of your red blood cells. Small cells point toward iron; large ones toward B12 or folate.",
   },
   {
-    system: "nutrient",
-    name: "Folate",
-    covered: false,
-    note: "Works alongside B12, and a deficiency in one can mask the other.",
-  },
-  {
-    system: "nutrient",
+    system: "blood",
     name: "Ferritin",
     covered: false,
     note: "Stored iron. Falls long before a blood count shows anemia.",
   },
   {
-    system: "nutrient",
-    name: "Iron and TIBC",
+    system: "blood",
+    name: "Serum iron",
     covered: false,
-    note: "Circulating iron, and how much capacity is left to carry more.",
+    note: "The iron circulating in your blood right now. It swings through the day, so it is read alongside ferritin.",
   },
   {
-    system: "nutrient",
-    name: "Magnesium, RBC",
+    system: "blood",
+    name: "Total iron-binding capacity",
     covered: false,
-    note: "Measured inside the red cell, where most of the body's magnesium actually sits.",
+    note: "How much room your blood has to carry iron. It rises when iron runs short.",
+  },
+  {
+    system: "blood",
+    name: "Transferrin saturation",
+    covered: false,
+    note: "The share of your blood's iron-carrying protein that is actually carrying iron.",
+  },
+  {
+    system: "blood",
+    name: "Vitamin B12",
+    covered: false,
+    note: "Needed for nerve function and red cell production.",
+  },
+  {
+    system: "blood",
+    name: "Folate",
+    covered: false,
+    note: "Works alongside B12, and a deficiency in one can mask the other.",
+  },
+  {
+    system: "blood",
+    name: "Vitamin D, 25-OH",
+    covered: false,
+    note: "The storage form. Low levels are common and entirely invisible without measuring.",
   },
 
   // Kidney & liver
@@ -310,6 +311,30 @@ export const BIOMARKERS = [
     note: "Sensitive to alcohol and to bile flow. Often the first liver enzyme to move.",
   },
 ] as const satisfies Biomarker[];
+
+export type BiomarkerName = (typeof BIOMARKERS)[number]["name"];
+
+/**
+ * One person's reading on one marker, for a case study laid over the strip.
+ * Descriptive, never diagnostic, and only ever what the case study states:
+ * a marker with no stated result gets no entry.
+ */
+export type BiomarkerResult = {
+  /** A finding is out of range and part of the explanation; clear is in range. */
+  status: "finding" | "clear";
+  /** The reading in a word or two, e.g. "Low" or "In range". */
+  reading: string;
+  /** What it meant for this person, in one sentence. */
+  meaning: string;
+};
+
+export type BiomarkerResults = Partial<Record<BiomarkerName, BiomarkerResult>>;
+
+/** One person's results, and the name to credit them to in the readout. */
+export type CaseStudyResults = {
+  person: string;
+  results: BiomarkerResults;
+};
 
 export const BIOMARKER_COUNT = BIOMARKERS.length;
 
