@@ -53,6 +53,21 @@
   /* Waveform graphic: bars sit in cool slate and light to white on rollover. */
   --color-waveform-slate: #94a3b8;
 
+  /* Body systems the hero's marker strip is grouped by. Hue says which system
+     a marker belongs to; how bright it sits says whether a standard physical
+     already covers it. Three reuse the brand spectrum. */
+  --color-marker-cardiovascular: #fab8a7;
+  --color-marker-metabolic: #fcd1de;
+  --color-marker-inflammation: #81ffd6;
+  --color-marker-hormone: #c3b5e8;
+  --color-marker-nutrient: #efd9b4;
+  --color-marker-organ: #a9c4e7;
+
+  /* Decelerate hard, so motion arrives rather than drifts. */
+  --ease-arrive: cubic-bezier(0.22, 1, 0.36, 1);
+  /* A little past the mark and back, so a lifted element reads as pulled up. */
+  --ease-pin: cubic-bezier(0.34, 1.4, 0.64, 1);
+
   /* Verdant — positive-trend accent used by the stat sprites. */
   --color-verdant-100: #e6f5ef;
 
