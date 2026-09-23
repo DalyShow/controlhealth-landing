@@ -30,6 +30,9 @@ type ScanHeroProperties = {
  * field's first sweep waits for the button, so it plays as the payoff rather
  * than competing with the words arriving.
  *
+ * The figure stands on the bottom edge of the frame, trimmed so the image
+ * carries no transparent margin that would lift her off it.
+ *
  * The figure is drawn twice. Underneath, her shape in the ground colour at
  * full strength, cut from the image's own alpha; on top, the image itself at
  * 42%. Without the solid layer she is translucent, the field shows straight
@@ -42,7 +45,7 @@ const classes = {
   section:
     "relative isolate min-h-[max(100dvh,680px)] w-full overflow-hidden bg-figure-ground",
   figure:
-    "-translate-x-1/2 pointer-events-none absolute top-[20.56%] bottom-[1%] left-1/2 z-[1] aspect-[418/898] animate-hero-figure motion-reduce:animate-none",
+    "-translate-x-1/2 pointer-events-none absolute top-[20.56%] bottom-0 left-1/2 z-[1] aspect-[536/776] animate-hero-figure motion-reduce:animate-none",
   occluder:
     "absolute inset-0 bg-figure-ground [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain]",
   image: "relative block size-full object-contain opacity-[0.42]",
@@ -79,9 +82,9 @@ export const ScanHero = ({
           alt=""
           className={classes.image}
           decoding="async"
-          height={898}
+          height={776}
           src={figureSrc}
-          width={418}
+          width={536}
         />
       </div>
 
