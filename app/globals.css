@@ -90,6 +90,12 @@
   --color-figure-glass-far: #1d2431;
   --color-figure-glass-near: #131822;
 
+  /* Frosted shell for readouts that float over the hero's footage, where the
+     surface behind them is moving and cannot be matched with a flat fill. */
+  --color-hero-glass: rgb(255 255 255 / 0.07);
+  --color-hero-glass-edge: rgb(255 255 255 / 0.14);
+  --color-hero-glass-rule: rgb(255 255 255 / 0.1);
+
   /* Soft, far-throw elevation for the hero call to action. */
   --shadow-cta:
     0 186px 52px rgb(0 0 0 / 0), 0 119px 48px rgb(0 0 0 / 0.01),

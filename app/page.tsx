@@ -8,6 +8,7 @@ import { RollingFigure } from "@/components/marketing/atoms/rolling-figure";
 import { TickingFigure } from "@/components/marketing/atoms/ticking-figure";
 import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
 import type { NavLink } from "@/components/marketing/molecules/nav-links";
+import { StatBar } from "@/components/marketing/molecules/stat-bar";
 import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
@@ -165,22 +166,22 @@ const LandingPage = () => (
         />
       }
       sprites={
-        <>
+        <StatBar>
           <StatSprite
             beatMs={STEP_BEAT_MS}
             delta="12%"
             figure={<TickingFigure base={14_804} />}
             icon={<FootstepsIcon />}
-            label="Steps"
+            label="Steps today"
           />
           <HeartRateSprite restingBpm={RESTING_BPM} />
           <StatSprite
-            delta="+ 5 mins"
+            delta="+5m"
             figure={<RollingFigure from="5h 00m" value="6h 52m" />}
             icon={<Moon strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
-            label="Sleep"
+            label="Sleep last night"
           />
-        </>
+        </StatBar>
       }
       subheadline={HERO.subheadline}
     />

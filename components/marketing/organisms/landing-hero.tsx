@@ -24,24 +24,22 @@ type LandingHeroProperties = {
  */
 const classes = {
   section:
-    "group/hero relative isolate flex min-h-[max(100dvh,660px)] w-full items-center justify-center overflow-hidden bg-hero-gradient px-6",
+    "relative isolate flex min-h-[max(100dvh,660px)] w-full items-center justify-center overflow-hidden bg-hero-gradient px-6",
   anchor: "relative",
   // The band runs from the bottom of the message group down to the top of the
-  // waveform, which sits 63px above the section's bottom edge (a 96px strip
-  // offset 33px below it — see the BiomarkerRange atom). The 50% is half the
-  // message group's own height, since that group is centred in the section.
+  // marker strip, which stands 24px off the section's bottom edge — see the
+  // BiomarkerRange atom. The 50% is half the message group's own height, since
+  // that group is centred in the section.
   //
-  // The half-height term mirrors the section's own `max(100dvh,660px)` floor.
-  // Without that floor a short viewport shrinks the band below the height of
-  // the sprite row, and the centred row spills over the copy and the waveform.
-  // The readout that rides the marker strip occupies this same band, so the
-  // sprites step aside while a marker is being read rather than sitting
-  // underneath the copy describing it.
+  // The bar sits at the top of that band rather than centred in it, because
+  // the readout riding the marker strip rises into the bottom of the same
+  // band. Kept to one line the two clear each other, so neither has to give
+  // way while the strip is being read.
   spriteBand:
-    "absolute inset-x-0 top-full flex h-[calc(max(50dvh,330px)-63px-50%)] items-center justify-center transition-opacity duration-300 ease-arrive group-has-[[data-marker-active]]/hero:opacity-0 max-sm:hidden motion-reduce:transition-none",
-  // One row, never stacking. `w-max` keeps it on its natural width so the
-  // centring does not squeeze it into a wrap.
-  sprites: "flex w-max flex-nowrap items-start gap-14",
+    "absolute inset-x-0 top-full flex h-[calc(max(50dvh,330px)-24px-50%)] items-start justify-center pt-1 max-sm:pt-0",
+  // `w-max` keeps the bar on its natural width so the centring does not
+  // squeeze it into a wrap.
+  sprites: "w-max max-w-full",
 } as const;
 
 export const LandingHero = ({

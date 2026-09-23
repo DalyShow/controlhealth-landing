@@ -12,22 +12,16 @@ import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Shape of the strip, sampled from the Figma graphic (Control Health
- * Marketing Site, node 1262:3132) as 82 control points. The rendered bars are
- * resampled from this curve, so their number is free to change without
- * redrawing the wave.
+ * Every bar is the same height. The strip used to carry the waveform from the
+ * Figma graphic, which was decorative and fought what it now says: forty
+ * evenly weighted markers, none of them more important than another. Flat, it
+ * reads as the ruler it is.
+ *
+ * Ninety-two pixels was amplitude the wave needed and a ruler does not, so the
+ * ticks are short. What it gives back is headroom: the readout sits lower and
+ * the hero's stat bar keeps the band above it.
  */
-const CURVE = [
-  134, 140, 145, 150, 154, 157, 160, 161, 162, 162, 160, 158, 155, 151, 147,
-  142, 137, 131, 126, 121, 116, 112, 108, 106, 104, 104, 104, 106, 109, 113,
-  117, 121, 126, 130, 134, 137, 139, 139, 139, 137, 133, 129, 124, 119, 113,
-  108, 103, 99, 96, 94, 94, 95, 97, 101, 105, 111, 118, 125, 132, 140, 147, 154,
-  160, 166, 170, 173, 174, 174, 172, 169, 165, 159, 153, 145, 138, 129, 121,
-  113, 106, 98, 92, 85,
-] satisfies number[];
-
-/** Height of the tallest bar, in pixels. */
-const MAX_BAR_HEIGHT = 92;
+const BAR_HEIGHT = 24;
 
 /**
  * Bars per marker. Four gives a hover target of roughly fourteen pixels
@@ -59,26 +53,8 @@ const RIPPLE_STEP_MS = 26;
 /** Gap between the readout and the window edge it is kept clear of. */
 const READOUT_MARGIN = 16;
 
-/**
- * Resamples the curve to `count` evenly spaced bars with linear interpolation,
- * normalised so the tallest bar lands on `peak`.
- */
-const resampleCurve = (curve: number[], count: number, peak: number) => {
-  const sourcePeak = Math.max(...curve);
-  const lastSourceIndex = curve.length - 1;
-
-  return Array.from({ length: count }, (_, index) => {
-    const position = (index / (count - 1)) * lastSourceIndex;
-    const lower = Math.floor(position);
-    const upper = Math.min(lower + 1, lastSourceIndex);
-    const lowerHeight = curve[lower] ?? 0;
-    const upperHeight = curve[upper] ?? lowerHeight;
-    const blended =
-      lowerHeight + (upperHeight - lowerHeight) * (position - lower);
-
-    return Math.round((blended / sourcePeak) * peak);
-  });
-};
+/** Matches `classes.readout`, for the clamp that keeps it inside the window. */
+const READOUT_WIDTH = 392;
 
 const clampToMarker = (index: number) =>
   Math.min(Math.max(index, 0), BIOMARKER_COUNT - 1);
@@ -126,7 +102,7 @@ const liftFor = (
  * value along an ordered range, moved with the arrow keys.
  */
 const classes = {
-  root: "-bottom-[33px] absolute inset-x-0 h-[96px] touch-none drop-shadow-waveform focus-visible:outline-none",
+  root: "absolute inset-x-0 bottom-0 h-[40px] touch-none drop-shadow-waveform focus-visible:outline-none",
   track:
     "-translate-x-1/2 absolute bottom-0 left-1/2 flex h-full w-full max-w-page items-end justify-between px-7",
   bar: "w-[3px] shrink-0 rounded-full opacity-[0.22] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[2px] motion-reduce:transition-none",
@@ -137,22 +113,26 @@ const classes = {
 
   // Sits over the strip and slides along it to whichever marker is active.
   readout:
-    "pointer-events-none absolute bottom-[124px] left-0 w-[328px] text-center opacity-0 transition-[opacity,transform] duration-[220ms,460ms] ease-arrive max-md:bottom-[112px] max-md:w-[300px] motion-reduce:transition-none",
+    "pointer-events-none absolute bottom-[64px] left-0 w-[392px] text-center transition-[opacity,transform] duration-[220ms,460ms] ease-arrive max-md:bottom-[60px] max-md:w-[300px] motion-reduce:transition-none",
+  // Exactly one of these is ever applied. Stacking two opacity utilities on
+  // one element leaves the winner to Tailwind's emit order, not to intent.
+  readoutRest: "opacity-0",
   readoutOn: "opacity-100",
+  eyebrow: "flex items-center justify-center gap-2.5",
   system:
     "font-medium font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--tone)]",
-  name: "mt-2 font-display text-[23px] text-primary-foreground leading-[1.2] max-md:text-[20px]",
-  note: "mt-2 text-pretty font-sans text-[13.5px] text-figure-body leading-[1.55] max-md:text-[13px]",
-  tagRow: "mt-3",
+  name: "mt-1.5 font-display text-[21px] text-primary-foreground leading-[1.2] max-md:text-[19px]",
+  note: "mt-1.5 text-pretty font-sans text-[13px] text-figure-body leading-[1.5] max-md:text-[12.5px]",
   tag: "inline-block rounded-full border px-[9px] py-1 font-mono text-[10px] uppercase tracking-[0.1em]",
   tagCovered: "border-primary-100/45 text-primary-100",
   tagMissing: "border-[var(--tone)] bg-[var(--tone)]/12 text-[var(--tone)]",
   // Hairline dropping from the readout toward the marker it describes.
   leader:
-    "mx-auto mt-3.5 h-11 w-px bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
+    "mx-auto mt-2.5 h-5 w-px bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
 
   caption:
-    "pointer-events-none absolute inset-x-0 bottom-[148px] text-center font-sans text-[13px] text-figure-body opacity-90 transition-opacity duration-[260ms] ease-arrive max-md:bottom-[136px] motion-reduce:transition-none",
+    "pointer-events-none absolute inset-x-0 bottom-[88px] text-center font-sans text-[13px] text-figure-body transition-opacity duration-[260ms] ease-arrive max-md:bottom-[84px] motion-reduce:transition-none",
+  captionRest: "opacity-90",
   captionOff: "opacity-0 duration-0",
   captionLead: "font-medium text-primary-foreground",
   captionHint:
@@ -182,8 +162,8 @@ export const BiomarkerRange = () => {
 
   const isNarrow = barsPerMarker === BARS_PER_MARKER_NARROW;
   const barCount = BIOMARKER_COUNT * barsPerMarker;
-  const barHeights = useMemo(
-    () => resampleCurve(CURVE, barCount, MAX_BAR_HEIGHT),
+  const bars = useMemo(
+    () => Array.from({ length: barCount }, (_, index) => index),
     [barCount]
   );
 
@@ -258,7 +238,8 @@ export const BiomarkerRange = () => {
 
       const box = centre.getBoundingClientRect();
       const edge = window.innerWidth / 2;
-      const half = Math.min(328, window.innerWidth - READOUT_MARGIN * 2) / 2;
+      const half =
+        Math.min(READOUT_WIDTH, window.innerWidth - READOUT_MARGIN * 2) / 2;
 
       setReadoutX(
         Math.min(
@@ -379,7 +360,7 @@ export const BiomarkerRange = () => {
     <>
       <p
         aria-hidden="true"
-        className={`${classes.caption} ${active ? classes.captionOff : ""}`}
+        className={`${classes.caption} ${active ? classes.captionOff : classes.captionRest}`}
       >
         <span className={classes.captionLead}>
           {COVERED_COUNT} of these {BIOMARKER_COUNT} markers
@@ -392,13 +373,11 @@ export const BiomarkerRange = () => {
 
       <div
         aria-hidden="true"
-        className={`${classes.readout} ${active ? classes.readoutOn : ""}`}
+        className={`${classes.readout} ${active ? classes.readoutOn : classes.readoutRest}`}
         style={readoutStyle}
       >
-        <p className={classes.system}>{activeSystem?.label}</p>
-        <p className={classes.name}>{active?.name}</p>
-        <p className={classes.note}>{active?.note}</p>
-        <p className={classes.tagRow}>
+        <p className={classes.eyebrow}>
+          <span className={classes.system}>{activeSystem?.label}</span>
           <span
             className={`${classes.tag} ${active?.covered ? classes.tagCovered : classes.tagMissing}`}
           >
@@ -407,6 +386,8 @@ export const BiomarkerRange = () => {
               : "not in a standard panel"}
           </span>
         </p>
+        <p className={classes.name}>{active?.name}</p>
+        <p className={classes.note}>{active?.note}</p>
         <span className={classes.leader} />
       </div>
 
@@ -429,7 +410,7 @@ export const BiomarkerRange = () => {
         tabIndex={0}
       >
         <div className={classes.track} ref={trackRef}>
-          {barHeights.map((height, index) => {
+          {bars.map((index) => {
             const marker = BIOMARKERS[Math.floor(index / barsPerMarker)];
 
             if (!marker) {
@@ -441,7 +422,7 @@ export const BiomarkerRange = () => {
               : liftFor(index, activeIndex, barsPerMarker);
 
             const style: CSSProperties = {
-              height: `${height}px`,
+              height: `${BAR_HEIGHT}px`,
               transform: `translateY(-${lift}px)`,
               transitionDelay: `${delay}ms`,
               transitionTimingFunction: "var(--ease-pin)",
@@ -455,7 +436,6 @@ export const BiomarkerRange = () => {
                   marker.covered,
                   Math.floor(index / barsPerMarker) === activeIndex
                 )}
-                // biome-ignore lint/suspicious/noArrayIndexKey: bars are a fixed, ordered dataset
                 key={index}
                 style={style}
               />

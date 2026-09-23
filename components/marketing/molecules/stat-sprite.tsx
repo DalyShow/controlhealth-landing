@@ -12,6 +12,10 @@ type Trend = "up" | "down" | "steady";
 
 type StatSpriteProperties = {
   icon: ReactNode;
+  /**
+   * Names the metric for assistive technology. The glyph carries it visually,
+   * so it is not drawn: at this size a label costs more room than it earns.
+   */
   label: string;
   /** The headline reading — each sprite supplies its own animated figure. */
   figure: ReactNode;
@@ -32,23 +36,28 @@ const TREND_ICONS = {
 } satisfies Record<Trend, LucideIcon>;
 
 /**
- * Floating stat readout that overlays the hero — an icon, a label, a live
- * figure and a trend delta. The shell is shared by every sprite; the icon
- * supplies the per-metric animation and reads the same beat as the figure, so
- * the two never drift apart.
+ * One live reading inside the hero's stat bar: a glyph, the figure and the
+ * direction it is travelling, all on a single line.
+ *
+ * The icon supplies the per-metric animation and reads the same beat as the
+ * figure, so the two never drift apart.
  */
 const classes = {
-  root: "inline-flex flex-col justify-center gap-[3px] rounded-xl px-[15px] py-3",
-  row: "flex items-center gap-1.5",
-  icon: "size-[18px] shrink-0 text-primary-foreground [&_svg]:size-full",
-  label: "font-medium font-sans text-[15px] text-primary-foreground leading-6",
+  root: "inline-flex items-center gap-1.5 px-3.5 max-sm:gap-1 max-sm:px-2.5",
+  icon: "size-[15px] shrink-0 text-primary-foreground [&_svg]:size-full",
+  // "98 bpm" will break across two lines given the chance, which makes the
+  // whole bar taller than the row it is meant to be.
   value:
-    "font-sans font-semibold text-2xl text-primary-foreground leading-none tabular-nums",
-  deltaRow: "flex items-center gap-1.5",
-  deltaIcon: "size-[18px] shrink-0 text-teal-300",
-  deltaChange: "font-medium font-sans text-[15px] text-verdant-100 leading-6",
+    "whitespace-nowrap font-sans font-semibold text-[13.5px] text-primary-foreground leading-none tabular-nums max-sm:text-[12px]",
+  // A phone has room for the readings but not for what they are doing. The
+  // figures are the point; the trend is colour commentary.
+  deltaRow: "flex items-center gap-0.5 max-sm:hidden",
+  deltaIcon: "size-[11px] shrink-0 text-teal-300",
+  deltaChange:
+    "whitespace-nowrap font-sans text-[11.5px] text-verdant-100 leading-none max-sm:text-[10.5px]",
   deltaSteady:
-    "font-medium font-sans text-[15px] text-primary-foreground leading-6",
+    "whitespace-nowrap font-sans text-[11.5px] text-primary-foreground/65 leading-none max-sm:text-[10.5px]",
+  hidden: "sr-only",
 } as const;
 
 const deltaClass = (trend: Trend) =>
@@ -68,21 +77,21 @@ export const StatSprite = ({
   return (
     <StepBeatContext.Provider value={beat}>
       <div className={classes.root}>
-        <div className={classes.row}>
-          <span className={classes.icon}>{icon}</span>
-          <span className={classes.label}>{label}</span>
-        </div>
+        <span aria-hidden="true" className={classes.icon}>
+          {icon}
+        </span>
+        <span className={classes.hidden}>{label}</span>
 
         <p className={classes.value}>{figure}</p>
 
-        <div className={classes.deltaRow}>
+        <span className={classes.deltaRow}>
           <TrendIcon
             aria-hidden="true"
             className={classes.deltaIcon}
             strokeWidth={SPRITE_ICON_STROKE_WIDTH}
           />
           <span className={deltaClass(trend)}>{delta}</span>
-        </div>
+        </span>
       </div>
     </StepBeatContext.Provider>
   );
