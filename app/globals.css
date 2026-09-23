@@ -174,43 +174,11 @@
 }
 
 @keyframes glint-travel {
-  0% {
-    --glint-angle: 0deg;
-  }
-  40% {
-    --glint-angle: 360deg;
-  }
-  100% {
+  to {
     --glint-angle: 360deg;
   }
 }
 
-/* Same sweep under a second name, so hover can restart a finished one. */
-@keyframes glint-travel-again {
-  0% {
-    --glint-angle: 0deg;
-  }
-  40% {
-    --glint-angle: 360deg;
-  }
-  100% {
-    --glint-angle: 360deg;
-  }
-}
-
-/**
- * A lit arc of the brand spectrum that runs a button's edge.
- *
- * The ring is a conic gradient the width of the border, clipped to the border
- * itself: two masks, one over the padding box and one over the whole element,
- * composited so only the difference survives. Most of the sweep is
- * transparent, so what travels is a short glint rather than a rainbow.
- *
- * The arc moves at a constant angular rate rather than a constant arc-length
- * one, which on a button-shaped box means it covers the short ends about 40%
- * faster than the long edges. Far too little to read as uneven, and the
- * alternative is an SVG overlay per button.
- */
 @utility border-glint {
   position: relative;
   isolation: isolate;
@@ -244,19 +212,15 @@
        frame it runs, and this sits on five buttons across the page; left
        infinite it is the most expensive thing here, for an effect nobody is
        watching after the first few seconds. */
-    animation: glint-travel 8s linear infinite;
+    animation: glint-travel 3.2s linear infinite;
   }
 
   /* Hover restarts it. A bounded animation cannot replay itself, so hovering
      swaps to an identical set under a second name, which counts as a new
      animation and runs from the top. */
-  &:hover::after {
-    animation: glint-travel-again 8s linear infinite;
-  }
 
   @media (prefers-reduced-motion: reduce) {
-    &::after,
-    &:hover::after {
+    &::after {
       animation: none;
     }
   }
