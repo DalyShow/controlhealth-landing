@@ -24,7 +24,9 @@
   /* The drawings sit inside a callout's four columns rather than filling them,
      so they read as figures on the page instead of as banners. Stroke weights
      across the three are calibrated against this width. */
-  --container-figure: 340px;
+  /* Five columns of the page grid at the 1440 frame, which is the same box
+     the callout's copy occupies. The cap only bites once the row stacks. */
+  --container-figure: 512px;
 
   /* Brand palette ramp. Mirrors the design system; the light button fill
      and its ink are the two ends of it. */

@@ -20,12 +20,14 @@ type CalloutCardProperties = {
  * half the grid and the title room to be read as a claim rather than a
  * caption.
  *
- * Copy takes five columns and the figure six, with a column of air between
- * them. Both are placed explicitly on the same grid row, because the flipped
- * variant asks for column eight before column one and auto-placement would
- * otherwise wrap the second of them onto a new row. Below `lg` there is no
- * room to sit side by side, so it unwinds to one column with the copy always
- * first, whichever side it takes on a wide screen.
+ * Copy and figure take five columns each with two of air between, so the
+ * drawing is framed by exactly the box the words are, rather than floating
+ * small inside a wider well. Both are placed explicitly on the same grid row,
+ * because the flipped variant asks for column eight before column one and
+ * auto-placement would otherwise wrap the second of them onto a new row.
+ * Below `lg` there is no room to sit side by side, so it unwinds to one
+ * column with the copy always first, whichever side it takes on a wide
+ * screen.
  */
 const classes = {
   root: "grid grid-cols-12 items-center gap-x-6",
@@ -34,9 +36,9 @@ const classes = {
   copyRight:
     "col-span-5 col-start-8 row-start-1 flex flex-col gap-5 max-lg:col-span-12 max-lg:col-start-1 max-lg:row-start-1",
   figureRight:
-    "col-span-6 col-start-7 row-start-1 flex min-h-[380px] items-center justify-center max-lg:col-span-12 max-lg:col-start-1 max-lg:row-start-2 max-lg:mt-12 max-md:min-h-0",
+    "col-span-5 col-start-8 row-start-1 flex items-center justify-center max-lg:col-span-12 max-lg:col-start-1 max-lg:row-start-2 max-lg:mt-12",
   figureLeft:
-    "col-span-6 col-start-1 row-start-1 flex min-h-[380px] items-center justify-center max-lg:col-span-12 max-lg:row-start-2 max-lg:mt-12 max-md:min-h-0",
+    "col-span-5 col-start-1 row-start-1 flex items-center justify-center max-lg:col-span-12 max-lg:row-start-2 max-lg:mt-12",
   label:
     "font-medium font-mono text-figure-label text-xs uppercase tracking-[0.18em]",
   // A step between the ramp's second and third, which are 44px and 24px at the
