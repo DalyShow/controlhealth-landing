@@ -5,7 +5,6 @@ import {
   BIOMARKER_COUNT,
   BIOMARKER_SYSTEMS,
   BIOMARKERS,
-  COVERED_COUNT,
 } from "@/lib/biomarkers";
 import { createTickPlayer } from "@/lib/tick-sound";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
@@ -102,7 +101,11 @@ const liftFor = (
  * value along an ordered range, moved with the arrow keys.
  */
 const classes = {
-  root: "absolute inset-x-0 bottom-0 h-[40px] touch-none drop-shadow-waveform focus-visible:outline-none",
+  // Twenty-four pixels of tick pinned to the bottom edge of the window is a
+  // hard thing to land on and an easy thing to fall off, so the region that
+  // answers the pointer reaches well above the ink. The bars stay bottom
+  // aligned inside it and nothing above them is drawn.
+  root: "absolute inset-x-0 bottom-0 h-[96px] touch-none drop-shadow-waveform focus-visible:outline-none",
   track:
     "-translate-x-1/2 absolute bottom-0 left-1/2 flex h-full w-full max-w-page items-end justify-between px-7",
   bar: "w-[3px] shrink-0 rounded-full opacity-[0.22] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[2px] motion-reduce:transition-none",
@@ -129,14 +132,6 @@ const classes = {
   // Hairline dropping from the readout toward the marker it describes.
   leader:
     "mx-auto mt-2.5 h-4 w-px bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
-
-  caption:
-    "pointer-events-none absolute inset-x-0 bottom-[76px] text-center [@media(max-height:780px)]:bottom-[58px] font-sans text-[13px] text-figure-body transition-opacity duration-[260ms] ease-arrive max-md:bottom-[84px] motion-reduce:transition-none",
-  captionRest: "opacity-90",
-  captionOff: "opacity-0 duration-0",
-  captionLead: "font-medium text-primary-foreground",
-  captionHint:
-    "mt-[5px] block font-mono text-[10px] uppercase tracking-[0.12em] opacity-50",
 } as const;
 
 const barClass = (covered: boolean, isActive: boolean) => {
@@ -223,7 +218,6 @@ export const BiomarkerRange = () => {
 
       activeIndexRef.current = index;
       setActiveIndex(index);
-      tickPlayer.play();
 
       // Park the readout over the marker's middle bar. Measured rather than
       // derived, because the track carries padding the bar index knows
@@ -247,6 +241,11 @@ export const BiomarkerRange = () => {
           edge * 2 - half - READOUT_MARGIN
         )
       );
+
+      // Last, and never able to take the visible work down with it: scrubbing
+      // the strip asks the audio graph for forty oscillators in a second and
+      // it is entitled to refuse.
+      tickPlayer.play();
     },
     [barsPerMarker, tickPlayer]
   );
@@ -258,6 +257,12 @@ export const BiomarkerRange = () => {
 
   const scrubTo = useCallback(
     (clientX: number) => {
+      // Measure now if the cached box is missing or stale. `pointerenter` is
+      // the usual moment, but it is not guaranteed to have happened.
+      if (!trackBoxRef.current || trackBoxRef.current.width === 0) {
+        measureTrack();
+      }
+
       const box = trackBoxRef.current;
 
       if (!box || box.width === 0) {
@@ -268,17 +273,22 @@ export const BiomarkerRange = () => {
 
       goToMarker(clampToMarker(Math.floor(ratio * BIOMARKER_COUNT)));
     },
-    [goToMarker]
+    [goToMarker, measureTrack]
   );
 
   const handlePointerEnter = () => measureTrack();
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    // A mouse scrubs on hover. A finger only reports moves once it is down,
-    // which the capture below arranges, so one handler serves both.
-    if (event.pointerType === "mouse" || draggingRef.current) {
-      scrubTo(event.clientX);
+    // Deliberately not conditioned on `pointerType`. A touch device does not
+    // send hover moves in the first place, so gating on the pointer calling
+    // itself a mouse bought nothing and silently killed hover whenever it
+    // reported anything else — while dragging, which took a different branch,
+    // carried on working. Narrow screens step on tap instead of tracking.
+    if (isNarrow) {
+      return;
     }
+
+    scrubTo(event.clientX);
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -293,8 +303,13 @@ export const BiomarkerRange = () => {
       return;
     }
 
-    draggingRef.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // Only a finger needs capture. Taking it for a mouse changes how the
+    // boundary events fire and can strand the strip mid-interaction.
+    if (event.pointerType !== "mouse") {
+      draggingRef.current = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
     scrubTo(event.clientX);
   };
 
@@ -306,8 +321,8 @@ export const BiomarkerRange = () => {
     }
   };
 
-  const handlePointerLeave = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "mouse" && !draggingRef.current) {
+  const handlePointerLeave = () => {
+    if (!draggingRef.current) {
       clear();
     }
   };
@@ -358,19 +373,6 @@ export const BiomarkerRange = () => {
 
   return (
     <>
-      <p
-        aria-hidden="true"
-        className={`${classes.caption} ${active ? classes.captionOff : classes.captionRest}`}
-      >
-        <span className={classes.captionLead}>
-          {COVERED_COUNT} of these {BIOMARKER_COUNT} markers
-        </span>{" "}
-        come with a standard physical.
-        <span className={classes.captionHint}>
-          {isNarrow ? "Tap to step through" : "Roll across to see the rest"}
-        </span>
-      </p>
-
       <div
         aria-hidden="true"
         className={`${classes.readout} ${active ? classes.readoutOn : classes.readoutRest}`}

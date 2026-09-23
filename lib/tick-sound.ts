@@ -58,8 +58,18 @@ export const createTickPlayer = (): TickPlayer => {
       }
 
       const startedAt = audio.currentTime;
-      const oscillator = audio.createOscillator();
-      const envelope = audio.createGain();
+
+      let oscillator: OscillatorNode;
+      let envelope: GainNode;
+
+      try {
+        oscillator = audio.createOscillator();
+        envelope = audio.createGain();
+      } catch {
+        // A fast scrub can ask for these faster than the graph will build
+        // them. A missing tick is not worth taking the caller down for.
+        return;
+      }
 
       oscillator.type = "triangle";
       oscillator.frequency.setValueAtTime(TICK_FREQUENCY_HZ, startedAt);

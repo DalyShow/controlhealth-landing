@@ -174,14 +174,26 @@
 }
 
 @keyframes glint-travel {
-  to {
+  0% {
+    --glint-angle: 0deg;
+  }
+  40% {
+    --glint-angle: 360deg;
+  }
+  100% {
     --glint-angle: 360deg;
   }
 }
 
 /* Same sweep under a second name, so hover can restart a finished one. */
 @keyframes glint-travel-again {
-  to {
+  0% {
+    --glint-angle: 0deg;
+  }
+  40% {
+    --glint-angle: 360deg;
+  }
+  100% {
     --glint-angle: 360deg;
   }
 }
@@ -232,14 +244,14 @@
        frame it runs, and this sits on five buttons across the page; left
        infinite it is the most expensive thing here, for an effect nobody is
        watching after the first few seconds. */
-    animation: glint-travel 3.2s linear var(--glint-cycles, 2);
+    animation: glint-travel 8s linear infinite;
   }
 
   /* Hover restarts it. A bounded animation cannot replay itself, so hovering
      swaps to an identical set under a second name, which counts as a new
      animation and runs from the top. */
   &:hover::after {
-    animation: glint-travel-again 3.2s linear var(--glint-cycles, 2);
+    animation: glint-travel-again 8s linear infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
