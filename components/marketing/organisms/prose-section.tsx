@@ -110,7 +110,9 @@ export const ProseSection = ({ eyebrow, blocks }: ProseSectionProperties) => (
                 <img
                   alt={image.alt}
                   className={classes.image}
+                  decoding="async"
                   height={image.height}
+                  loading="lazy"
                   src={image.src}
                   width={image.width}
                 />

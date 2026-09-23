@@ -159,7 +159,9 @@ export const StickyScrollSection = ({
                     <img
                       alt={panel.image.alt}
                       className={classes.image}
+                      decoding="async"
                       height={panel.image.height}
+                      loading="lazy"
                       src={panel.image.src}
                       width={panel.image.width}
                     />

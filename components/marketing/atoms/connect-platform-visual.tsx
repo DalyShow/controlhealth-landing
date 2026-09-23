@@ -1,3 +1,6 @@
+"use client";
+
+import { useReplayInView } from "@/hooks/use-in-view";
 import {
   ISO_ELLIPSE_RX,
   ISO_ELLIPSE_RY,
@@ -11,7 +14,7 @@ import {
   OURA_RING_ART,
   type ProductArt,
 } from "@/lib/product-art";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useRef } from "react";
 
 type SourceKey = "watch" | "record" | "ring";
 
@@ -100,6 +103,13 @@ const ART = {
  * the sources face the viewer, since a watch drawn in the isometric plane
  * reads as a skewed rounded rectangle rather than as a watch.
  */
+/**
+ * Cycles a figure plays when it comes into view before resting. Running
+ * every timeline on the page forever costs frames for motion nobody is
+ * looking at.
+ */
+const FIGURE_CYCLES = 2;
+
 const classes = {
   root: "block h-auto w-full max-w-figure",
   stack: "[transform-box:fill-box] [transform-origin:center]",
@@ -123,12 +133,12 @@ const plate = ({ z, scale }: Plate) =>
 const stackStyle: CSSProperties = {
   animation: `figure-receive ${STAGGER_S}s ease-out ${
     CYCLE_S * ARRIVAL_FRACTION
-  }s infinite`,
+  }s ${FIGURE_CYCLES}`,
 };
 
 const travelStyle = (delay: number, dx: number, dy: number): CSSProperties =>
   ({
-    animation: `figure-travel ${CYCLE_S}s linear ${delay}s infinite`,
+    animation: `figure-travel ${CYCLE_S}s linear ${delay}s ${FIGURE_CYCLES}`,
     "--dx": `${dx}px`,
     "--dy": `${dy}px`,
   }) as CSSProperties;
@@ -136,11 +146,11 @@ const travelStyle = (delay: number, dx: number, dy: number): CSSProperties =>
 const rippleStyle = (delay: number): CSSProperties => ({
   animation: `figure-ripple ${CYCLE_S}s ease-out ${
     delay + CYCLE_S * ARRIVAL_FRACTION
-  }s infinite`,
+  }s ${FIGURE_CYCLES}`,
 });
 
 const floatStyle = (delay: number): CSSProperties => ({
-  animation: `figure-float 5s ease-in-out ${delay}s infinite`,
+  animation: `figure-float 5s ease-in-out ${delay}s ${FIGURE_CYCLES}`,
 });
 
 /** One hand-drawn product, centred on its own origin and scaled to fit. */
@@ -157,73 +167,86 @@ const Artwork = ({ art, scale }: { art: ProductArt; scale: number }) => (
   </g>
 );
 
-export const ConnectPlatformVisual = () => (
-  <svg
-    aria-hidden="true"
-    className={classes.root}
-    data-figure=""
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={1.26}
-    viewBox="-128 -180 256 250"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      <linearGradient id="platform-glass" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0" stopColor="var(--color-figure-glass-far)" />
-        <stop offset="1" stopColor="var(--color-figure-glass-near)" />
-      </linearGradient>
-    </defs>
+export const ConnectPlatformVisual = () => {
+  const figureRef = useRef<SVGSVGElement>(null);
 
-    {/* The stack breathes as a unit when data lands. */}
-    <g className={classes.stack} style={stackStyle}>
-      {PLATES.map((layer) => (
-        <path
-          className={layer.z === SURFACE_Z ? classes.plateTop : classes.plate}
-          d={plate(layer)}
-          key={layer.z}
-          opacity={layer.opacity}
-        />
-      ))}
-    </g>
+  // Plays its couple of cycles when it arrives and rests after, rather
+  // than animating forever behind whatever you are actually reading.
+  useReplayInView(figureRef);
 
-    {SOURCES.map((source) => {
-      const hover = isoPoint(source.x, source.y, SOURCE_Z);
-      const landing = isoPoint(source.land.x, source.land.y, SURFACE_Z);
-      const delay = source.order * STAGGER_S;
+  return (
+    <svg
+      aria-hidden="true"
+      className={classes.root}
+      data-figure=""
+      fill="none"
+      ref={figureRef}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.26}
+      viewBox="-128 -180 256 250"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="platform-glass" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--color-figure-glass-far)" />
+          <stop offset="1" stopColor="var(--color-figure-glass-near)" />
+        </linearGradient>
+      </defs>
 
-      return (
-        <g key={source.key}>
-          <circle
-            className={classes.packet}
-            cx={hover.x}
-            cy={hover.y}
-            data-figure-transient=""
-            r={1.8}
-            style={travelStyle(delay, landing.x - hover.x, landing.y - hover.y)}
+      {/* The stack breathes as a unit when data lands. */}
+      <g className={classes.stack} style={stackStyle}>
+        {PLATES.map((layer) => (
+          <path
+            className={layer.z === SURFACE_Z ? classes.plateTop : classes.plate}
+            d={plate(layer)}
+            key={layer.z}
+            opacity={layer.opacity}
           />
+        ))}
+      </g>
 
-          <ellipse
-            className={classes.ripple}
-            cx={landing.x}
-            cy={landing.y}
-            data-figure-transient=""
-            rx={RIPPLE_RADIUS * ISO_ELLIPSE_RX}
-            ry={RIPPLE_RADIUS * ISO_ELLIPSE_RY}
-            style={rippleStyle(delay)}
-          />
+      {SOURCES.map((source) => {
+        const hover = isoPoint(source.x, source.y, SOURCE_Z);
+        const landing = isoPoint(source.land.x, source.land.y, SURFACE_Z);
+        const delay = source.order * STAGGER_S;
 
-          {/* The float keyframes animate `transform`, which would clobber a
-              positional transform on the same element. Position the outer
-              group and animate an inner one. */}
-          <g transform={`translate(${hover.x} ${hover.y})`}>
-            <g style={floatStyle(delay)}>
-              <Artwork art={ART[source.key]} scale={ART_SCALE[source.key]} />
+        return (
+          <g key={source.key}>
+            <circle
+              className={classes.packet}
+              cx={hover.x}
+              cy={hover.y}
+              data-figure-transient=""
+              r={1.8}
+              style={travelStyle(
+                delay,
+                landing.x - hover.x,
+                landing.y - hover.y
+              )}
+            />
+
+            <ellipse
+              className={classes.ripple}
+              cx={landing.x}
+              cy={landing.y}
+              data-figure-transient=""
+              rx={RIPPLE_RADIUS * ISO_ELLIPSE_RX}
+              ry={RIPPLE_RADIUS * ISO_ELLIPSE_RY}
+              style={rippleStyle(delay)}
+            />
+
+            {/* The float keyframes animate `transform`, which would clobber a
+                positional transform on the same element. Position the outer
+                group and animate an inner one. */}
+            <g transform={`translate(${hover.x} ${hover.y})`}>
+              <g style={floatStyle(delay)}>
+                <Artwork art={ART[source.key]} scale={ART_SCALE[source.key]} />
+              </g>
             </g>
           </g>
-        </g>
-      );
-    })}
-  </svg>
-);
+        );
+      })}
+    </svg>
+  );
+};

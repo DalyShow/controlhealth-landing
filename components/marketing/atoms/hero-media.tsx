@@ -1,5 +1,6 @@
 "use client";
 
+import { useInView } from "@/hooks/use-in-view";
 import { useEffect, useRef, useState } from "react";
 
 type HeroMediaProperties = {
@@ -56,7 +57,27 @@ export const HeroMedia = ({
   opacity = DEFAULT_OPACITY,
 }: HeroMediaProperties) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
+  const inView = useInView(layerRef);
+
+  // Video decoding is not free, and a hero is scrolled past within seconds.
+  // Off screen there is nothing to show for the work, so stop doing it.
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    if (inView) {
+      video.play().catch(() => {
+        // Autoplay can be refused; the poster or the gradient still stands.
+      });
+    } else {
+      video.pause();
+    }
+  }, [inView]);
 
   // A cached video can reach its ready state before React attaches the
   // listeners, in which case the event never arrives. And on a slow connection
@@ -92,6 +113,7 @@ export const HeroMedia = ({
     <div
       aria-hidden="true"
       className={classes.root}
+      ref={layerRef}
       style={{ opacity: isReady ? opacity : 0 }}
     >
       {isVideoSource(src) ? (

@@ -1,5 +1,8 @@
+"use client";
+
+import { useReplayInView } from "@/hooks/use-in-view";
 import { roundedRectPath, sparklePath } from "@/lib/path";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useRef } from "react";
 
 type Bar = {
   x: number;
@@ -37,6 +40,13 @@ const TWINKLE_S = 2.6;
  * running its border. Flat and frontal, against the platform's isometric
  * floor, so the two figures read as different kinds of object.
  */
+/**
+ * Cycles a figure plays when it comes into view before resting. Running
+ * every timeline on the page forever costs frames for motion nobody is
+ * looking at.
+ */
+const FIGURE_CYCLES = 2;
+
 const classes = {
   root: "block h-auto w-full max-w-figure",
   field:
@@ -59,94 +69,103 @@ const FIELD_PATH = roundedRectPath(
 );
 
 const twinkleStyle = (delay: number): CSSProperties => ({
-  animation: `figure-twinkle ${TWINKLE_S}s ease-in-out ${delay}s infinite`,
+  animation: `figure-twinkle ${TWINKLE_S}s ease-in-out ${delay}s ${FIGURE_CYCLES}`,
 });
 
 const caretStyle: CSSProperties = {
-  animation: "figure-caret 1.1s steps(1, end) infinite",
+  animation: `figure-caret 1.1s steps(1, end) ${FIGURE_CYCLES}`,
 };
 
 const highlightStyle: CSSProperties = {
-  animation: "figure-trace 3.4s linear infinite",
+  animation: `figure-trace 3.4s linear ${FIGURE_CYCLES}`,
 };
 
-export const AiInputVisual = () => (
-  <svg
-    aria-hidden="true"
-    className={classes.root}
-    data-figure=""
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    viewBox="-128 -112 256 184"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      {/* Its own gradient rather than the platform's, so neither figure
-          depends on the other being on the page. */}
-      <linearGradient id="input-glass" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0" stopColor="var(--color-figure-glass-far)" />
-        <stop offset="1" stopColor="var(--color-figure-glass-near)" />
-      </linearGradient>
-    </defs>
+export const AiInputVisual = () => {
+  const figureRef = useRef<SVGSVGElement>(null);
 
-    {SPARKLES.map((sparkle) => (
-      <path
-        className={classes.sparkle}
-        d={sparklePath(sparkle.cx, sparkle.cy, sparkle.r)}
-        key={sparkle.r}
-        style={twinkleStyle(sparkle.delay)}
-      />
-    ))}
+  // Plays its couple of cycles when it arrives and rests after, rather
+  // than animating forever behind whatever you are actually reading.
+  useReplayInView(figureRef);
 
-    {REPLY_BARS.map((reply) => (
+  return (
+    <svg
+      aria-hidden="true"
+      className={classes.root}
+      data-figure=""
+      fill="none"
+      ref={figureRef}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="-128 -112 256 184"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        {/* Its own gradient rather than the platform's, so neither figure
+            depends on the other being on the page. */}
+        <linearGradient id="input-glass" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--color-figure-glass-far)" />
+          <stop offset="1" stopColor="var(--color-figure-glass-near)" />
+        </linearGradient>
+      </defs>
+
+      {SPARKLES.map((sparkle) => (
+        <path
+          className={classes.sparkle}
+          d={sparklePath(sparkle.cx, sparkle.cy, sparkle.r)}
+          key={sparkle.r}
+          style={twinkleStyle(sparkle.delay)}
+        />
+      ))}
+
+      {REPLY_BARS.map((reply) => (
+        <rect
+          className={classes.fill}
+          height={BAR_HEIGHT}
+          key={reply.y}
+          rx={BAR_HEIGHT / 2}
+          width={reply.width}
+          x={reply.x}
+          y={reply.y}
+        />
+      ))}
+
+      <path className={classes.field} d={FIELD_PATH} />
+
+      {/* The typed question, with a caret sitting at the end of it. */}
       <rect
         className={classes.fill}
         height={BAR_HEIGHT}
-        key={reply.y}
         rx={BAR_HEIGHT / 2}
-        width={reply.width}
-        x={reply.x}
-        y={reply.y}
+        width={84}
+        x={-74}
+        y={FIELD_MID - BAR_HEIGHT / 2}
       />
-    ))}
+      <rect
+        className={classes.caret}
+        height={14}
+        rx={0.8}
+        style={caretStyle}
+        width={1.6}
+        x={13}
+        y={FIELD_MID - 7}
+      />
 
-    <path className={classes.field} d={FIELD_PATH} />
+      <circle className={classes.field} cx={SEND.cx} cy={SEND.cy} r={SEND.r} />
+      <path
+        className={classes.mark}
+        d={`M${SEND.cx} ${SEND.cy + 6.5}v-12M${SEND.cx - 5} ${
+          SEND.cy - 1
+        }l5-5 5 5`}
+      />
 
-    {/* The typed question, with a caret sitting at the end of it. */}
-    <rect
-      className={classes.fill}
-      height={BAR_HEIGHT}
-      rx={BAR_HEIGHT / 2}
-      width={84}
-      x={-74}
-      y={FIELD_MID - BAR_HEIGHT / 2}
-    />
-    <rect
-      className={classes.caret}
-      height={14}
-      rx={0.8}
-      style={caretStyle}
-      width={1.6}
-      x={13}
-      y={FIELD_MID - 7}
-    />
-
-    <circle className={classes.field} cx={SEND.cx} cy={SEND.cy} r={SEND.r} />
-    <path
-      className={classes.mark}
-      d={`M${SEND.cx} ${SEND.cy + 6.5}v-12M${SEND.cx - 5} ${
-        SEND.cy - 1
-      }l5-5 5 5`}
-    />
-
-    {/* pathLength normalises the border to 100 units, so the dash pattern is
-        a percentage of the perimeter and the loop closes seamlessly. */}
-    <path
-      className={classes.highlight}
-      d={FIELD_PATH}
-      pathLength={100}
-      style={highlightStyle}
-    />
-  </svg>
-);
+      {/* pathLength normalises the border to 100 units, so the dash pattern is
+          a percentage of the perimeter and the loop closes seamlessly. */}
+      <path
+        className={classes.highlight}
+        d={FIELD_PATH}
+        pathLength={100}
+        style={highlightStyle}
+      />
+    </svg>
+  );
+};

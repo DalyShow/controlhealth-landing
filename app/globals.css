@@ -158,6 +158,13 @@
   }
 }
 
+/* Same sweep under a second name, so hover can restart a finished one. */
+@keyframes glint-travel-again {
+  to {
+    --glint-angle: 360deg;
+  }
+}
+
 /**
  * A lit arc of the brand spectrum that runs a button's edge.
  *
@@ -200,11 +207,23 @@
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     mask-composite: exclude;
-    animation: glint-travel 3.2s linear infinite;
+    /* Bounded, not endless. An animated conic gradient is repainted every
+       frame it runs, and this sits on five buttons across the page; left
+       infinite it is the most expensive thing here, for an effect nobody is
+       watching after the first few seconds. */
+    animation: glint-travel 3.2s linear var(--glint-cycles, 2);
+  }
+
+  /* Hover restarts it. A bounded animation cannot replay itself, so hovering
+     swaps to an identical set under a second name, which counts as a new
+     animation and runs from the top. */
+  &:hover::after {
+    animation: glint-travel-again 3.2s linear var(--glint-cycles, 2);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    &::after {
+    &::after,
+    &:hover::after {
       animation: none;
     }
   }

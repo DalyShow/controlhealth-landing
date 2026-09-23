@@ -1,5 +1,8 @@
+"use client";
+
+import { useReplayInView } from "@/hooks/use-in-view";
 import { roundedRectPath } from "@/lib/path";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useRef } from "react";
 
 type Pick = {
   /** Position in the grid of everything measurable. */
@@ -192,6 +195,13 @@ const LAB_KEYFRAMES = [
  * measurable, scanned, narrowed to four markers, and assembled into a panel
  * with one reading outside its reference range.
  */
+/**
+ * Cycles a figure plays when it comes into view before resting. Running
+ * every timeline on the page forever costs frames for motion nobody is
+ * looking at.
+ */
+const FIGURE_CYCLES = 2;
+
 const classes = {
   root: "block h-auto w-full max-w-figure",
   dot: "fill-transparent stroke-figure-line-dim [stroke-width:1.01]",
@@ -209,7 +219,7 @@ const classes = {
 } as const;
 
 const runs = (name: string, easing = "linear"): CSSProperties => ({
-  animation: `${name} ${CYCLE_S}s ${easing} infinite`,
+  animation: `${name} ${CYCLE_S}s ${easing} ${FIGURE_CYCLES}`,
 });
 
 const EASE_SETTLE = "cubic-bezier(.22,.9,.3,1)";
@@ -233,120 +243,129 @@ const CARD_PATH = roundedRectPath(
 
 const isFlagged = (value: number) => value < BAND_FROM || value > BAND_TO;
 
-export const LabPanelVisual = () => (
-  <svg
-    aria-hidden="true"
-    className={classes.root}
-    data-figure=""
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    viewBox="-128 -124 256 228"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      <linearGradient id="panel-glass" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0" stopColor="var(--color-figure-glass-far)" />
-        <stop offset="1" stopColor="var(--color-figure-glass-near)" />
-      </linearGradient>
-    </defs>
+export const LabPanelVisual = () => {
+  const figureRef = useRef<SVGSVGElement>(null);
 
-    <style>{LAB_KEYFRAMES}</style>
+  // Plays its couple of cycles when it arrives and rests after, rather
+  // than animating forever behind whatever you are actually reading.
+  useReplayInView(figureRef);
 
-    {/* Everything that could be measured, and the scan reading across it. */}
-    <g data-figure-transient="">
-      {LOOSE.map(({ col, row }) => (
+  return (
+    <svg
+      aria-hidden="true"
+      className={classes.root}
+      data-figure=""
+      fill="none"
+      ref={figureRef}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="-128 -124 256 228"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="panel-glass" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--color-figure-glass-far)" />
+          <stop offset="1" stopColor="var(--color-figure-glass-near)" />
+        </linearGradient>
+      </defs>
+
+      <style>{LAB_KEYFRAMES}</style>
+
+      {/* Everything that could be measured, and the scan reading across it. */}
+      <g data-figure-transient="">
+        {LOOSE.map(({ col, row }) => (
+          <circle
+            className={classes.dot}
+            cx={gridX(col)}
+            cy={gridY(row)}
+            key={`${col}-${row}`}
+            r={3}
+            style={runs(`lab-scan-${col}`)}
+          />
+        ))}
+
+        {PICKS.map((pick, index) => (
+          <circle
+            className={classes.halo}
+            cx={gridX(pick.col)}
+            cy={gridY(pick.row)}
+            key={`${pick.col}-${pick.row}`}
+            r={3}
+            style={runs(`lab-halo-${index}`, "ease-out")}
+          />
+        ))}
+
+        <line
+          className={classes.sweep}
+          style={runs("lab-sweep")}
+          x1={0}
+          x2={0}
+          y1={-112}
+          y2={-34}
+        />
+      </g>
+
+      {/* The panel the picks assemble into. */}
+      <g style={runs("lab-card")}>
+        <path className={classes.card} d={CARD_PATH} />
+
+        {ROW_Y.map((y, index) => (
+          <g key={y} style={runs(`lab-row-${index}`)}>
+            <rect
+              className={classes.label}
+              height={5}
+              rx={2.5}
+              width={LABEL_W[index]}
+              x={-76}
+              y={y - 2.5}
+            />
+            {/* A thin rule for the full range, a thicker segment for the
+                window, so the row reads as a reference range and not a bar. */}
+            <rect
+              className={classes.track}
+              height={1.5}
+              rx={0.75}
+              width={TRACK_W}
+              x={TRACK_X}
+              y={y - 0.75}
+            />
+            <rect
+              className={classes.band}
+              height={5}
+              rx={2.5}
+              width={(BAND_TO - BAND_FROM) * TRACK_W}
+              x={trackAt(BAND_FROM)}
+              y={y - 2.5}
+            />
+          </g>
+        ))}
+      </g>
+
+      {PICKS.map((pick, index) => (
         <circle
-          className={classes.dot}
-          cx={gridX(col)}
-          cy={gridY(row)}
-          key={`${col}-${row}`}
-          r={3}
-          style={runs(`lab-scan-${col}`)}
+          className={
+            isFlagged(pick.value)
+              ? `${classes.value} ${classes.flag}`
+              : classes.value
+          }
+          cx={trackAt(pick.value)}
+          cy={ROW_Y[index]}
+          key={`value-${pick.col}`}
+          r={3.4}
+          style={runs(`lab-value-${index}`, EASE_SETTLE)}
         />
       ))}
 
       {PICKS.map((pick, index) => (
         <circle
-          className={classes.halo}
-          cx={gridX(pick.col)}
-          cy={gridY(pick.row)}
-          key={`${pick.col}-${pick.row}`}
-          r={3}
-          style={runs(`lab-halo-${index}`, "ease-out")}
+          className={classes.pick}
+          cx={MARKER_X}
+          cy={ROW_Y[index]}
+          key={`pick-${pick.col}`}
+          r={3.4}
+          style={runs(`lab-pick-${index}`, EASE_CARRY)}
         />
       ))}
-
-      <line
-        className={classes.sweep}
-        style={runs("lab-sweep")}
-        x1={0}
-        x2={0}
-        y1={-112}
-        y2={-34}
-      />
-    </g>
-
-    {/* The panel the picks assemble into. */}
-    <g style={runs("lab-card")}>
-      <path className={classes.card} d={CARD_PATH} />
-
-      {ROW_Y.map((y, index) => (
-        <g key={y} style={runs(`lab-row-${index}`)}>
-          <rect
-            className={classes.label}
-            height={5}
-            rx={2.5}
-            width={LABEL_W[index]}
-            x={-76}
-            y={y - 2.5}
-          />
-          {/* A thin rule for the full range, a thicker segment for the
-              window, so the row reads as a reference range and not a bar. */}
-          <rect
-            className={classes.track}
-            height={1.5}
-            rx={0.75}
-            width={TRACK_W}
-            x={TRACK_X}
-            y={y - 0.75}
-          />
-          <rect
-            className={classes.band}
-            height={5}
-            rx={2.5}
-            width={(BAND_TO - BAND_FROM) * TRACK_W}
-            x={trackAt(BAND_FROM)}
-            y={y - 2.5}
-          />
-        </g>
-      ))}
-    </g>
-
-    {PICKS.map((pick, index) => (
-      <circle
-        className={
-          isFlagged(pick.value)
-            ? `${classes.value} ${classes.flag}`
-            : classes.value
-        }
-        cx={trackAt(pick.value)}
-        cy={ROW_Y[index]}
-        key={`value-${pick.col}`}
-        r={3.4}
-        style={runs(`lab-value-${index}`, EASE_SETTLE)}
-      />
-    ))}
-
-    {PICKS.map((pick, index) => (
-      <circle
-        className={classes.pick}
-        cx={MARKER_X}
-        cy={ROW_Y[index]}
-        key={`pick-${pick.col}`}
-        r={3.4}
-        style={runs(`lab-pick-${index}`, EASE_CARRY)}
-      />
-    ))}
-  </svg>
-);
+    </svg>
+  );
+};
