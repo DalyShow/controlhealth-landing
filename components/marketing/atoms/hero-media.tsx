@@ -24,6 +24,18 @@ const VIDEO_EXTENSIONS = [".mp4", ".webm", ".ogv", ".mov"] satisfies string[];
 /** Stop the moment the hero is off screen, rather than a little after. */
 const HERO_MEDIA_ROOT_MARGIN = "0px";
 
+/**
+ * The footage is fetched once the layer is genuinely inside the viewport. At
+ * the top of a page that is immediately. In a section further down it keeps
+ * several hundred kilobytes of video off the initial load, and the still
+ * covers the moment the footage takes to arrive.
+ *
+ * Pulled in by two pixels rather than left at zero: a section that starts
+ * exactly at the fold is edge-adjacent to the viewport on load, which an
+ * IntersectionObserver reports as intersecting.
+ */
+const HERO_MEDIA_ARM_MARGIN = "0px 0px -2px 0px";
+
 /** Where the layer settles unless a page asks for something quieter. */
 const DEFAULT_OPACITY = 0.9;
 
@@ -118,8 +130,19 @@ export const HeroMedia = ({
   // decoder running for another 120px after the hero has gone.
   const inView = useInView(layerRef, HERO_MEDIA_ROOT_MARGIN);
 
+  const isNear = useInView(layerRef, HERO_MEDIA_ARM_MARGIN);
+  const [isArmed, setIsArmed] = useState(false);
+
+  // A latch: once the footage has been wanted it stays mounted, so scrolling
+  // back past it does not throw away the decoded video and fetch it again.
+  useEffect(() => {
+    if (isNear) {
+      setIsArmed(true);
+    }
+  }, [isNear]);
+
   const isVideo = isVideoSource(src);
-  const wantsVideo = useWantsVideo() && isVideo;
+  const wantsVideo = useWantsVideo() && isVideo && isArmed;
   const stillSrc = isVideo ? poster : src;
 
   // A still served from cache — which is every navigation after the first —

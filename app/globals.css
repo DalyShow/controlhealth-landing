@@ -283,6 +283,15 @@
   }
 }
 
+/* A full-screen panel: full width and exactly one viewport tall. The floor
+   stops a very short window collapsing a panel's absolutely placed content
+   onto itself; anything that positions against a panel's height should use
+   the same 680px. */
+@utility panel {
+  width: 100%;
+  height: max(100dvh, 680px);
+}
+
 /* Solid at the floor, dissolving upward into the ground. For a field that
    rises behind copy, so whatever sits over its upper half keeps its contrast. */
 @utility mask-field-rise {

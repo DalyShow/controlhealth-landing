@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
  * ticks are short. What it gives back is headroom: the readout sits lower and
  * the hero's stat bar keeps the band above it.
  */
-const BAR_HEIGHT = 24;
+const BAR_HEIGHT = 56;
 
 /**
  * Bars per marker. Four gives a hover target of roughly fourteen pixels
@@ -38,10 +38,10 @@ const BARS_PER_MARKER_NARROW = 2;
 const NARROW_QUERY = "(max-width: 767px)";
 
 /** How far the marker under the pointer rises, in pixels. */
-const GROUP_LIFT = 9;
+const GROUP_LIFT = 16;
 
 /** Falloff either side of the marker, indexed by distance from its edge. */
-const LIFT = [6, 4, 3, 2, 1] satisfies number[];
+const LIFT = [11, 8, 5, 3, 2] satisfies number[];
 
 /**
  * Milliseconds added per step away from the marker, so the lift travels
@@ -53,7 +53,7 @@ const RIPPLE_STEP_MS = 26;
 const READOUT_MARGIN = 16;
 
 /** Matches `classes.readout`, for the clamp that keeps it inside the window. */
-const READOUT_WIDTH = 440;
+const READOUT_WIDTH = 560;
 
 const clampToMarker = (index: number) =>
   Math.min(Math.max(index, 0), BIOMARKER_COUNT - 1);
@@ -101,37 +101,49 @@ const liftFor = (
  * value along an ordered range, moved with the arrow keys.
  */
 const classes = {
-  // Twenty-four pixels of tick pinned to the bottom edge of the window is a
-  // hard thing to land on and an easy thing to fall off, so the region that
-  // answers the pointer reaches well above the ink. The bars stay bottom
-  // aligned inside it and nothing above them is drawn.
-  root: "absolute inset-x-0 bottom-0 h-[96px] touch-none drop-shadow-waveform focus-visible:outline-none",
+  // A strip pinned to the bottom edge of the window is a hard thing to land
+  // on and an easy thing to fall off, so the region that answers the pointer
+  // reaches well above the ink. The bars stay bottom aligned inside it and
+  // nothing above them is drawn.
+  root: "absolute inset-x-0 bottom-0 h-[140px] touch-none drop-shadow-waveform focus-visible:outline-none",
   track:
     "-translate-x-1/2 absolute bottom-0 left-1/2 flex h-full w-full max-w-page items-end justify-between px-7",
-  bar: "w-[3px] shrink-0 rounded-full opacity-[0.22] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[2px] motion-reduce:transition-none",
+  bar: "w-[4px] shrink-0 rounded-full opacity-[0.22] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[3px] motion-reduce:transition-none",
   barCovered:
-    "w-[3px] shrink-0 rounded-full opacity-[0.82] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[2px] motion-reduce:transition-none",
+    "w-[4px] shrink-0 rounded-full opacity-[0.82] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[3px] motion-reduce:transition-none",
   barActive:
-    "w-[3px] shrink-0 rounded-full opacity-100 drop-shadow-[0_0_6px_var(--tone)] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[2px] motion-reduce:transition-none",
+    "w-[4px] shrink-0 rounded-full opacity-100 drop-shadow-[0_0_8px_var(--tone)] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[3px] motion-reduce:transition-none",
 
   // Sits over the strip and slides along it to whichever marker is active.
+  // Its bottom edge, the tip of the hairline, stops well clear of the bars
+  // at full lift (56 + 16 = 72px), so nothing in it ever touches them.
   readout:
-    "pointer-events-none absolute bottom-[52px] left-0 w-[440px] text-center [@media(max-height:780px)]:bottom-[34px] transition-[opacity,transform] duration-[220ms,460ms] ease-arrive max-md:bottom-[52px] max-md:w-[300px] motion-reduce:transition-none",
+    "pointer-events-none absolute bottom-[124px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[108px] max-md:bottom-[108px] max-md:w-[330px]",
+  // One of these, never both: gliding between markers, or fading in place
+  // on arrival.
+  readoutGlide:
+    "transition-[opacity,transform] duration-[220ms,460ms] ease-arrive motion-reduce:transition-none",
+  readoutJump:
+    "transition-opacity duration-[220ms] ease-arrive motion-reduce:transition-none",
   // Exactly one of these is ever applied. Stacking two opacity utilities on
   // one element leaves the winner to Tailwind's emit order, not to intent.
   readoutRest: "opacity-0",
   readoutOn: "opacity-100",
   system:
-    "font-medium font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--tone)]",
-  name: "mt-1.5 font-display text-[21px] text-primary-foreground leading-[1.2] max-md:text-[19px] [@media(max-height:780px)]:text-[19px]",
-  note: "mt-1.5 text-pretty font-sans text-[13px] text-figure-body leading-[1.5] max-md:text-[12.5px] [@media(max-height:780px)]:text-[12px]",
-  tagRow: "mt-2.5 [@media(max-height:780px)]:mt-2",
-  tag: "inline-block rounded-full border px-[9px] py-1 font-mono text-[10px] uppercase tracking-[0.1em]",
+    "font-medium font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--tone)] max-md:text-[11px]",
+  name: "mt-2 font-display text-[30px] text-primary-foreground leading-[1.15] max-md:text-[24px] [@media(max-height:780px)]:text-[26px]",
+  note: "mt-2 text-pretty font-sans text-[16px] text-figure-body leading-[1.5] max-md:text-[14px] [@media(max-height:780px)]:text-[15px]",
+  tagRow: "mt-3.5 [@media(max-height:780px)]:mt-3",
+  tag: "inline-block rounded-full border px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.1em] max-md:text-[11px]",
   tagCovered: "border-primary-100/45 text-primary-100",
   tagMissing: "border-[var(--tone)] bg-[var(--tone)]/12 text-[var(--tone)]",
-  // Hairline dropping from the readout toward the marker it describes.
+  // Hairline dropping from the readout toward the marker it describes. It is
+  // long on purpose: it lifts the text well clear of the bars while still
+  // reaching down to the one being read. `block` matters: it is a span, and
+  // an inline box ignores both its width and its height, so without it the
+  // line never draws at all.
   leader:
-    "mx-auto mt-2.5 h-4 w-px bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
+    "mx-auto mt-4 block h-[72px] w-px max-md:h-12 [@media(max-height:780px)]:h-12 bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
 } as const;
 
 const barClass = (covered: boolean, isActive: boolean) => {
@@ -151,6 +163,7 @@ export const BiomarkerRange = () => {
   const [barsPerMarker, setBarsPerMarker] = useState(BARS_PER_MARKER_WIDE);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [readoutX, setReadoutX] = useState(0);
+  const [isGliding, setIsGliding] = useState(false);
 
   const prefersReducedMotion = usePrefersReducedMotion();
   const tickPlayer = useMemo(createTickPlayer, []);
@@ -216,8 +229,15 @@ export const BiomarkerRange = () => {
         return;
       }
 
+      // Appearing, it jumps straight to its marker; only once it is showing
+      // does it glide from one marker to the next. Otherwise the first hover
+      // slides it in from wherever it last sat — off the left edge on a
+      // fresh page, since its position starts at zero.
+      const isEntering = activeIndexRef.current === null;
+
       activeIndexRef.current = index;
       setActiveIndex(index);
+      setIsGliding(!isEntering);
 
       // Park the readout over the marker's middle bar. Measured rather than
       // derived, because the track carries padding the bar index knows
@@ -375,7 +395,7 @@ export const BiomarkerRange = () => {
     <>
       <div
         aria-hidden="true"
-        className={`${classes.readout} ${active ? classes.readoutOn : classes.readoutRest}`}
+        className={`${classes.readout} ${isGliding ? classes.readoutGlide : classes.readoutJump} ${active ? classes.readoutOn : classes.readoutRest}`}
         style={readoutStyle}
       >
         <p className={classes.system}>{activeSystem?.label}</p>

@@ -44,8 +44,7 @@ type ScanHeroProperties = {
  * with no seam.
  */
 const classes = {
-  section:
-    "relative isolate min-h-[max(100dvh,680px)] w-full overflow-hidden bg-figure-ground",
+  section: "panel relative isolate overflow-hidden bg-figure-ground",
   figure:
     "-translate-x-1/2 pointer-events-none absolute top-[20.56%] bottom-0 left-1/2 z-[1] aspect-[409/891] animate-hero-figure motion-reduce:animate-none",
   occluder:

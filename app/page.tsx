@@ -13,6 +13,7 @@ import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import type { TrustItem } from "@/components/marketing/molecules/trust-row";
 import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
+import { CaseStudySection } from "@/components/marketing/organisms/case-study-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
 import { LandingCta } from "@/components/marketing/organisms/landing-cta";
 import {
@@ -45,6 +46,15 @@ type Callout = {
  * switching back is this one line.
  */
 const ACTIVE_HERO: HeroVariant = "scan";
+
+/**
+ * The sections below the case study are built but hidden while the top of the
+ * page is worked out as full-screen panels. Set to true to bring them back.
+ */
+const SHOW_LOWER_SECTIONS = false;
+
+/** Who the first case study follows. */
+const CASE_STUDY_INTRO = "Sarah, 41, avid runner";
 
 /** Copy for the scan hero, from the Figma frame (1290:42929). */
 const SCAN_HERO = {
@@ -216,6 +226,40 @@ const HEROES = {
   ),
 } satisfies Record<HeroVariant, ReactNode>;
 
+/**
+ * The first case study: one person, their live readings, their footage, and
+ * the biomarker strip. It reuses the media hero's pieces in its own section.
+ */
+const CASE_STUDY = (
+  <CaseStudySection
+    intro={CASE_STUDY_INTRO}
+    media={
+      <HeroMedia
+        poster={assetPath("/media/video-3-poster.webp")}
+        src={assetPath("/media/video-3.mp4")}
+      />
+    }
+    stats={
+      <>
+        <StatSprite
+          beatMs={STEP_BEAT_MS}
+          delta="12%"
+          figure={<TickingFigure base={14_804} />}
+          icon={<FootstepsIcon />}
+          label="Steps today"
+        />
+        <HeartRateSprite restingBpm={RESTING_BPM} />
+        <StatSprite
+          delta="+5m"
+          figure={<RollingFigure from="5h 00m" value="6h 52m" />}
+          icon={<Moon strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          label="Sleep last night"
+        />
+      </>
+    }
+  />
+);
+
 const classes = {
   page: "relative w-full",
 } as const;
@@ -230,32 +274,37 @@ const LandingPage = () => (
       logoLabel="Control Health, back to home"
     />
     {HEROES[ACTIVE_HERO]}
-    <CalloutSection body={SECTION.body} headline={SECTION.headline}>
-      {CALLOUTS.map((callout, index) => (
-        <CalloutCard
-          body={callout.body}
-          flipped={index % 2 === 1}
-          key={callout.label}
-          label={callout.label}
-          title={callout.title}
-          visual={CALLOUT_VISUALS[callout.label]}
+    {CASE_STUDY}
+    {SHOW_LOWER_SECTIONS ? (
+      <>
+        <CalloutSection body={SECTION.body} headline={SECTION.headline}>
+          {CALLOUTS.map((callout, index) => (
+            <CalloutCard
+              body={callout.body}
+              flipped={index % 2 === 1}
+              key={callout.label}
+              label={callout.label}
+              title={callout.title}
+              visual={CALLOUT_VISUALS[callout.label]}
+            />
+          ))}
+        </CalloutSection>
+        <LandingCta
+          ctaLabel={CTA.ctaLabel}
+          headline={CTA.headline}
+          subheadline={CTA.subheadline}
         />
-      ))}
-    </CalloutSection>
-    <LandingCta
-      ctaLabel={CTA.ctaLabel}
-      headline={CTA.headline}
-      subheadline={CTA.subheadline}
-    />
-    <LandingFooter
-      blurb={FOOTER.blurb}
-      columns={FOOTER_COLUMNS}
-      legal={FOOTER.legal}
-      markLabel={FOOTER.markLabel}
-      socials={SOCIALS}
-      statement={FOOTER.statement}
-      wordmarkSrc={assetPath("/assets/wordmark-light.svg")}
-    />
+        <LandingFooter
+          blurb={FOOTER.blurb}
+          columns={FOOTER_COLUMNS}
+          legal={FOOTER.legal}
+          markLabel={FOOTER.markLabel}
+          socials={SOCIALS}
+          statement={FOOTER.statement}
+          wordmarkSrc={assetPath("/assets/wordmark-light.svg")}
+        />
+      </>
+    ) : null}
   </main>
 );
 

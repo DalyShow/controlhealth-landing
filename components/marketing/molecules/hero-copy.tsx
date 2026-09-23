@@ -2,8 +2,9 @@ import { Heading } from "@/components/marketing/atoms/heading";
 import { Button } from "@/components/ui/button";
 
 type HeroCopyProperties = {
-  headline: string;
-  subheadline: string;
+  /** Omit, with the subheadline, for a section that leads with its media. */
+  headline?: string;
+  subheadline?: string;
   ctaLabel: string;
   ctaHref?: string;
 };
@@ -11,6 +12,10 @@ type HeroCopyProperties = {
 /**
  * Centred hero message: display headline, uppercase supporting line, and a
  * single call to action, stacked in one flex column.
+ *
+ * The headline and supporting line are optional, for a section that reuses
+ * the hero's frame without its message. The headline is the page's H1 when it
+ * is present, so leaving it out below the fold keeps the outline to one.
  */
 const classes = {
   group: "flex flex-col items-center gap-10",
@@ -28,12 +33,18 @@ export const HeroCopy = ({
   ctaHref,
 }: HeroCopyProperties) => (
   <div className={classes.group}>
-    <div className={classes.copy}>
-      <Heading className={classes.headline} level={1}>
-        {headline}
-      </Heading>
-      <p className={classes.subheadline}>{subheadline}</p>
-    </div>
+    {headline || subheadline ? (
+      <div className={classes.copy}>
+        {headline ? (
+          <Heading className={classes.headline} level={1}>
+            {headline}
+          </Heading>
+        ) : null}
+        {subheadline ? (
+          <p className={classes.subheadline}>{subheadline}</p>
+        ) : null}
+      </div>
+    ) : null}
     {ctaHref ? (
       <Button asChild className={classes.cta} size="xl">
         <a href={ctaHref}>{ctaLabel}</a>
