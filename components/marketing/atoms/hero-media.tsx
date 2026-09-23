@@ -21,6 +21,9 @@ type HeroMediaProperties = {
 /** Sources with these extensions render as video; anything else as an image. */
 const VIDEO_EXTENSIONS = [".mp4", ".webm", ".ogv", ".mov"] satisfies string[];
 
+/** Stop the moment the hero is off screen, rather than a little after. */
+const HERO_MEDIA_ROOT_MARGIN = "0px";
+
 /** Where the layer settles unless a page asks for something quieter. */
 const DEFAULT_OPACITY = 0.9;
 
@@ -110,7 +113,10 @@ export const HeroMedia = ({
   const layerRef = useRef<HTMLDivElement>(null);
   const [isStillReady, setIsStillReady] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
-  const inView = useInView(layerRef);
+  // No grace margin. The shared default starts things a little before they
+  // arrive, which is right for a figure and wrong for video: it keeps a
+  // decoder running for another 120px after the hero has gone.
+  const inView = useInView(layerRef, HERO_MEDIA_ROOT_MARGIN);
 
   const isVideo = isVideoSource(src);
   const wantsVideo = useWantsVideo() && isVideo;
