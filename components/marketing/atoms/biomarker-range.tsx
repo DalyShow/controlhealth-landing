@@ -54,7 +54,7 @@ const RIPPLE_STEP_MS = 26;
 const READOUT_MARGIN = 16;
 
 /** Matches `classes.readout`, for the clamp that keeps it inside the window. */
-const READOUT_WIDTH = 392;
+const READOUT_WIDTH = 440;
 
 const clampToMarker = (index: number) =>
   Math.min(Math.max(index, 0), BIOMARKER_COUNT - 1);
@@ -113,25 +113,25 @@ const classes = {
 
   // Sits over the strip and slides along it to whichever marker is active.
   readout:
-    "pointer-events-none absolute bottom-[64px] left-0 w-[392px] text-center transition-[opacity,transform] duration-[220ms,460ms] ease-arrive max-md:bottom-[60px] max-md:w-[300px] motion-reduce:transition-none",
+    "pointer-events-none absolute bottom-[52px] left-0 w-[440px] text-center [@media(max-height:780px)]:bottom-[34px] transition-[opacity,transform] duration-[220ms,460ms] ease-arrive max-md:bottom-[52px] max-md:w-[300px] motion-reduce:transition-none",
   // Exactly one of these is ever applied. Stacking two opacity utilities on
   // one element leaves the winner to Tailwind's emit order, not to intent.
   readoutRest: "opacity-0",
   readoutOn: "opacity-100",
-  eyebrow: "flex items-center justify-center gap-2.5",
   system:
     "font-medium font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--tone)]",
-  name: "mt-1.5 font-display text-[21px] text-primary-foreground leading-[1.2] max-md:text-[19px]",
-  note: "mt-1.5 text-pretty font-sans text-[13px] text-figure-body leading-[1.5] max-md:text-[12.5px]",
+  name: "mt-1.5 font-display text-[21px] text-primary-foreground leading-[1.2] max-md:text-[19px] [@media(max-height:780px)]:text-[19px]",
+  note: "mt-1.5 text-pretty font-sans text-[13px] text-figure-body leading-[1.5] max-md:text-[12.5px] [@media(max-height:780px)]:text-[12px]",
+  tagRow: "mt-2.5 [@media(max-height:780px)]:mt-2",
   tag: "inline-block rounded-full border px-[9px] py-1 font-mono text-[10px] uppercase tracking-[0.1em]",
   tagCovered: "border-primary-100/45 text-primary-100",
   tagMissing: "border-[var(--tone)] bg-[var(--tone)]/12 text-[var(--tone)]",
   // Hairline dropping from the readout toward the marker it describes.
   leader:
-    "mx-auto mt-2.5 h-5 w-px bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
+    "mx-auto mt-2.5 h-4 w-px bg-gradient-to-b from-[var(--tone)]/60 to-transparent",
 
   caption:
-    "pointer-events-none absolute inset-x-0 bottom-[88px] text-center font-sans text-[13px] text-figure-body transition-opacity duration-[260ms] ease-arrive max-md:bottom-[84px] motion-reduce:transition-none",
+    "pointer-events-none absolute inset-x-0 bottom-[76px] text-center [@media(max-height:780px)]:bottom-[58px] font-sans text-[13px] text-figure-body transition-opacity duration-[260ms] ease-arrive max-md:bottom-[84px] motion-reduce:transition-none",
   captionRest: "opacity-90",
   captionOff: "opacity-0 duration-0",
   captionLead: "font-medium text-primary-foreground",
@@ -376,8 +376,10 @@ export const BiomarkerRange = () => {
         className={`${classes.readout} ${active ? classes.readoutOn : classes.readoutRest}`}
         style={readoutStyle}
       >
-        <p className={classes.eyebrow}>
-          <span className={classes.system}>{activeSystem?.label}</span>
+        <p className={classes.system}>{activeSystem?.label}</p>
+        <p className={classes.name}>{active?.name}</p>
+        <p className={classes.note}>{active?.note}</p>
+        <p className={classes.tagRow}>
           <span
             className={`${classes.tag} ${active?.covered ? classes.tagCovered : classes.tagMissing}`}
           >
@@ -386,8 +388,6 @@ export const BiomarkerRange = () => {
               : "not in a standard panel"}
           </span>
         </p>
-        <p className={classes.name}>{active?.name}</p>
-        <p className={classes.note}>{active?.note}</p>
         <span className={classes.leader} />
       </div>
 

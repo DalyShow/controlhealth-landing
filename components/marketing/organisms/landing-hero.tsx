@@ -36,7 +36,7 @@ const classes = {
   // band. Kept to one line the two clear each other, so neither has to give
   // way while the strip is being read.
   spriteBand:
-    "absolute inset-x-0 top-full flex h-[calc(max(50dvh,330px)-24px-50%)] items-start justify-center pt-1 max-sm:pt-0",
+    "absolute inset-x-0 top-full flex h-[calc(max(50dvh,330px)-24px-50%)] items-start justify-center pt-8 max-sm:pt-6",
   // `w-max` keeps the bar on its natural width so the centring does not
   // squeeze it into a wrap.
   sprites: "w-max max-w-full",
