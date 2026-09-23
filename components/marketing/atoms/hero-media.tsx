@@ -102,8 +102,11 @@ export const HeroMedia = ({
   poster,
   opacity = DEFAULT_OPACITY,
 }: HeroMediaProperties) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const stillRef = useRef<HTMLImageElement>(null);
+  // Held as state rather than in a ref because both elements mount after the
+  // first render — the video once the media query has been read, the still
+  // once there is one to show — and the effects below have to run when they do.
+  const [video, setVideo] = useState<HTMLVideoElement | null>(null);
+  const [still, setStill] = useState<HTMLImageElement | null>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const [isStillReady, setIsStillReady] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
@@ -111,24 +114,20 @@ export const HeroMedia = ({
 
   const isVideo = isVideoSource(src);
   const wantsVideo = useWantsVideo() && isVideo;
-  const still = isVideo ? poster : src;
+  const stillSrc = isVideo ? poster : src;
 
   // A still served from cache — which is every navigation after the first —
   // finishes loading before React attaches `onLoad`, so the event never
   // arrives and the layer would sit at zero holding a picture it already has.
   useEffect(() => {
-    const image = stillRef.current;
-
-    if (image?.complete && image.naturalWidth > 0) {
+    if (still?.complete && still.naturalWidth > 0) {
       setIsStillReady(true);
     }
-  }, []);
+  }, [still]);
 
   // Video decoding is not free, and a hero is scrolled past within seconds.
   // Off screen there is nothing to show for the work, so stop doing it.
   useEffect(() => {
-    const video = videoRef.current;
-
     if (!video) {
       return;
     }
@@ -140,15 +139,13 @@ export const HeroMedia = ({
     } else {
       video.pause();
     }
-  }, [inView, wantsVideo]);
+  }, [inView, video]);
 
   // A cached video can reach its ready state before React attaches the
   // listeners, in which case the event never arrives. And on a slow connection
   // `canplaythrough` may be a long way off, so settle for a painted frame
   // rather than showing nothing.
   useEffect(() => {
-    const video = videoRef.current;
-
     if (!video) {
       return;
     }
@@ -165,7 +162,7 @@ export const HeroMedia = ({
     }, READY_FALLBACK_MS);
 
     return () => window.clearTimeout(fallback);
-  }, [wantsVideo]);
+  }, [video]);
 
   const handleVideoReady = () => setIsVideoReady(true);
 
@@ -181,7 +178,7 @@ export const HeroMedia = ({
       ref={layerRef}
       style={{ opacity: isLayerReady ? opacity : 0 }}
     >
-      {still ? (
+      {stillSrc ? (
         // biome-ignore lint/performance/noImgElement: full-bleed decorative layer, sized by CSS
         // biome-ignore lint/correctness/useImageSize: intrinsic size is irrelevant, the layer is stretched by object-cover
         // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onLoad is a resource event, not a user interaction
@@ -189,8 +186,8 @@ export const HeroMedia = ({
           alt=""
           className={classes.still}
           onLoad={() => setIsStillReady(true)}
-          ref={stillRef}
-          src={still}
+          ref={setStill}
+          src={stillSrc}
         />
       ) : null}
 
@@ -205,7 +202,7 @@ export const HeroMedia = ({
           onPlaying={handleVideoReady}
           playsInline
           preload="auto"
-          ref={videoRef}
+          ref={setVideo}
           src={src}
           style={{ opacity: isVideoReady ? 1 : 0 }}
         />
