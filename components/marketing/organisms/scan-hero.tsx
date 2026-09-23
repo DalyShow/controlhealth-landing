@@ -25,10 +25,11 @@ type ScanHeroProperties = {
  * with the scan field rising behind her across the bottom 70% of the frame.
  *
  * Everything enters on one timeline, set in the theme as the `hero-*`
- * animations: headline, figure and field together, the body a second later,
- * the button a second after that, and the trust row just behind it. The
- * field's first sweep waits for the button, so it plays as the payoff rather
- * than competing with the words arriving.
+ * animations, and played in beats: the copy on its own first, a held second
+ * on the words, then the figure, another beat, then the field fading up
+ * behind her, and the scan crossing it once the field is fully in. The
+ * field times that first scan off its own fade, so re-timing the theme
+ * keeps the sequence intact.
  *
  * The figure stands on the bottom edge of the frame. The image is trimmed to
  * her cutout, including the anti-aliased rows the export left on its bottom

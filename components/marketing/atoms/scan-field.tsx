@@ -19,6 +19,8 @@ type Scene = {
   originX: number;
   dot: number;
   picks: Pick[];
+  /** When the first round begins, on the document timeline, in ms. */
+  firstSweepAt: number;
   /** Seconds into the current round, or null before the first sweep. */
   roundTime: number | null;
   /** 0 to 1 while the scan is crossing, outside that range otherwise. */
@@ -87,8 +89,12 @@ const PICK_COUNT = 40;
  */
 const PICK_ROW_SHARE = 0.68;
 
-/** The first sweep waits for the hero's button to land. */
-const START_AFTER_S = 2.6;
+/**
+ * Used only if the field's entrance cannot be read, which should not happen:
+ * the first scan is otherwise timed off the field's own fade (see
+ * `firstSweepAt`), so the theme's `hero-field` token is the single source.
+ */
+const FALLBACK_FIRST_SWEEP_MS = 6800;
 
 const SWEEP_FROM_S = 0.3;
 const SWEEP_S = 5.5;
@@ -339,16 +345,38 @@ const drawScan = (ctx: CanvasRenderingContext2D, scene: Scene) => {
   ctx.fillRect(scene.scanX - SCAN_LINE_PX / 2, 0, SCAN_LINE_PX, scene.height);
 };
 
-/** Where the round is at `elapsed` seconds since mount. */
-const advance = (scene: Scene, elapsed: number) => {
-  if (scene.still || elapsed < START_AFTER_S) {
+/**
+ * The moment the field's fade-in finishes, on the document timeline — the
+ * same clock CSS animations and requestAnimationFrame both run on. The scan
+ * starts there, so however the theme re-times the entrance, the first sweep
+ * follows the fade rather than a number that has to be kept in step with it.
+ * Read from the running animation rather than from mount, because the page
+ * may hydrate after the CSS has already started it.
+ */
+const firstSweepAt = (canvas: HTMLCanvasElement) => {
+  const fade = canvas.getAnimations()[0];
+  const timing = fade?.effect?.getTiming();
+  const start = fade?.startTime;
+
+  if (!(fade && timing && typeof start === "number")) {
+    return performance.now() + FALLBACK_FIRST_SWEEP_MS;
+  }
+
+  const duration = typeof timing.duration === "number" ? timing.duration : 0;
+
+  return start + (timing.delay ?? 0) + duration;
+};
+
+/** Where the round is at `now`, a document-timeline timestamp in ms. */
+const advance = (scene: Scene, now: number) => {
+  if (scene.still || now < scene.firstSweepAt) {
     scene.roundTime = null;
     scene.sweep = -1;
     scene.clear = 1;
     return;
   }
 
-  const roundTime = (elapsed - START_AFTER_S) % ROUND_S;
+  const roundTime = ((now - scene.firstSweepAt) / 1000) % ROUND_S;
   const sweep = (roundTime - SWEEP_FROM_S) / SWEEP_S;
   const clearFrom = SWEEP_FROM_S + SWEEP_S + HOLD_S;
 
@@ -394,6 +422,7 @@ export const ScanField = () => {
       originX: 0,
       dot: DOT_MIN,
       picks: [],
+      firstSweepAt: Number.POSITIVE_INFINITY,
       roundTime: null,
       sweep: -1,
       scanX: 0,
@@ -401,7 +430,6 @@ export const ScanField = () => {
       still: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     };
 
-    const born = performance.now();
     let frame = 0;
     let live = false;
 
@@ -445,7 +473,7 @@ export const ScanField = () => {
     };
 
     const tick = (now: number) => {
-      advance(scene, (now - born) / 1000);
+      advance(scene, now);
       draw();
 
       if (live) {
@@ -476,6 +504,8 @@ export const ScanField = () => {
       onScreen = Boolean(entry?.isIntersecting);
       sync();
     });
+
+    scene.firstSweepAt = firstSweepAt(canvas);
 
     resizeObserver.observe(canvas);
     visibilityObserver.observe(canvas);

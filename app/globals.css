@@ -144,18 +144,25 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* The scan hero's entrance, as one timeline: the headline and figure
-     arrive together, the copy a second later, the button a second after that.
-     Each step bakes its delay into its own token rather than pairing a shared
-     animation with a delay utility, because the shorthand resets the delay
-     and which of the two wins would come down to emit order. `both` holds
-     the first frame through the delay, so nothing needs an opacity class. */
+  /* The scan hero's entrance, as one timeline played in beats: the copy
+     first (headline, subheadline a second later, button a second after
+     that), then a held second on the words alone before the figure comes
+     in, another beat before the field fades up behind her, and the scan
+     crossing it once the field is fully in. The field component reads its
+     own fade off the element to time that first scan, so this block is the
+     only place the timing lives.
+
+     Each step bakes its delay into its own token rather than pairing a
+     shared animation with a delay utility, because the shorthand resets the
+     delay and which of the two wins would come down to emit order. `both`
+     holds the first frame through the delay, so nothing needs an opacity
+     class. */
   --animate-hero-headline: hero-lift 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
-  --animate-hero-figure: hero-lift 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
-  --animate-hero-field: hero-fade 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
   --animate-hero-body: hero-rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.25s both;
   --animate-hero-button: hero-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 2.25s both;
   --animate-hero-trust: hero-fade 1s cubic-bezier(0.22, 1, 0.36, 1) 2.6s both;
+  --animate-hero-figure: hero-lift 2s cubic-bezier(0.22, 1, 0.36, 1) 3.4s both;
+  --animate-hero-field: hero-fade 1.4s cubic-bezier(0.22, 1, 0.36, 1) 5.4s both;
 
   /* No blur on the lift: it carries the gradient headline, and Safari has a
      history of dropping background-clip text under an animated filter. */
