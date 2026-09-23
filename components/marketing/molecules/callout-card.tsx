@@ -7,34 +7,44 @@ type CalloutCardProperties = {
   title: string;
   body: string;
   visual: ReactNode;
+  /** Puts the figure on the left and the copy on the right. */
+  flipped?: boolean;
 };
 
 /**
- * One callout: a plate label, a line-art illustration, then the claim and a
- * sentence of support.
+ * One callout, as a full-width row: the claim and its sentence on one side,
+ * the line-art figure on the other, alternating down the run.
  *
- * Four columns wide on the page grid. The card box spans the columns, but its
- * contents are inset so neither the drawing nor the copy runs into the rules
- * on either side — the inset matches the drawing's own width, so the figure
- * and the sentence beneath it share an edge. The illustration sits in a
- * fixed-height well so the three cards keep their titles on a shared baseline
- * whatever their figures measure.
+ * Three of these side by side gave each figure a third of the page and left
+ * the titles at the smallest step on the ramp. A row apiece buys the figure
+ * half the grid and the title room to be read as a claim rather than a
+ * caption.
+ *
+ * Copy takes five columns and the figure six, with a column of air between
+ * them. Both are placed explicitly on the same grid row, because the flipped
+ * variant asks for column eight before column one and auto-placement would
+ * otherwise wrap the second of them onto a new row. Below `lg` there is no
+ * room to sit side by side, so it unwinds to one column with the copy always
+ * first, whichever side it takes on a wide screen.
  */
 const classes = {
-  // The inset is a fixed measure, so it eats proportionally more of a
-  // narrow column. It tapers as the columns close up, and goes entirely
-  // once the cards stack and there are no rules left to clear.
-  root: "col-span-4 flex flex-col gap-10 px-7 max-xl:px-4 max-md:col-span-12 max-md:px-0",
+  root: "grid grid-cols-12 items-center gap-x-6",
+  copyLeft:
+    "col-span-5 col-start-1 row-start-1 flex flex-col gap-5 max-lg:col-span-12 max-lg:row-start-1",
+  copyRight:
+    "col-span-5 col-start-8 row-start-1 flex flex-col gap-5 max-lg:col-span-12 max-lg:col-start-1 max-lg:row-start-1",
+  figureRight:
+    "col-span-6 col-start-7 row-start-1 flex min-h-[380px] items-center justify-center max-lg:col-span-12 max-lg:col-start-1 max-lg:row-start-2 max-lg:mt-12 max-md:min-h-0",
+  figureLeft:
+    "col-span-6 col-start-1 row-start-1 flex min-h-[380px] items-center justify-center max-lg:col-span-12 max-lg:row-start-2 max-lg:mt-12 max-md:min-h-0",
   label:
     "font-medium font-mono text-figure-label text-xs uppercase tracking-[0.18em]",
-  // Stacked in one column there is no shared baseline to hold, so the well
-  // stops reserving height the figure does not use.
-  well: "flex h-[340px] items-center justify-center max-md:h-auto",
-  // Padded off the drawing above it, so the claim reads as a separate zone
-  // rather than as a caption hanging off the figure.
-  copy: "flex flex-col gap-4 pt-8",
-  title: "text-primary-foreground",
-  body: "text-pretty font-sans text-[15px] text-figure-body leading-[1.6]",
+  // A step between the ramp's second and third, which are 44px and 24px at the
+  // 1440 frame with nothing in between. If this size turns up again it wants
+  // to become a ramp step rather than an override.
+  title:
+    "text-balance text-primary-foreground text-[clamp(1.75rem,1.45rem+0.94vw,2.25rem)]",
+  body: "max-w-[46ch] text-pretty font-sans text-figure-body text-base leading-[1.65]",
 } as const;
 
 export const CalloutCard = ({
@@ -42,15 +52,19 @@ export const CalloutCard = ({
   title,
   body,
   visual,
+  flipped = false,
 }: CalloutCardProperties) => (
   <article className={classes.root}>
-    <p className={classes.label}>{label}</p>
-    <div className={classes.well}>{visual}</div>
-    <div className={classes.copy}>
-      <Heading className={classes.title} level={3}>
+    <div className={flipped ? classes.copyRight : classes.copyLeft}>
+      <p className={classes.label}>{label}</p>
+      <Heading as={3} className={classes.title} level={2}>
         {title}
       </Heading>
       <p className={classes.body}>{body}</p>
+    </div>
+
+    <div className={flipped ? classes.figureLeft : classes.figureRight}>
+      {visual}
     </div>
   </article>
 );

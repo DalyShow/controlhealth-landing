@@ -8,13 +8,15 @@ type CalloutSectionProperties = {
 };
 
 /**
- * Three-up callout row on the deep surface below the hero, introduced by a
- * centred headline.
+ * The callout run on the deep surface below the hero, introduced by a centred
+ * headline.
  *
- * Both rows sit on the page's twelve-column grid: the header takes the middle
- * eight columns, each callout takes four. Hairline rules separate the columns
- * rather than boxing each card, so the row reads as one plate of technical
- * figures instead of three cards.
+ * The header takes the middle eight columns of the page's twelve-column grid.
+ * Each callout below it is a full-width row that alternates which side its
+ * figure sits on, so the eye is handed down the page rather than across it.
+ *
+ * The hairline rules went with the three-up layout: they were there to divide
+ * columns, and rows separated by 120px of air do not need dividing.
  */
 const classes = {
   section: "w-full bg-figure-ground py-32 max-md:py-20",
@@ -31,8 +33,7 @@ const classes = {
    * border. That keeps it off the card's own padding, which is free to inset
    * the contents as far as it likes without dragging the rule along with it.
    */
-  cards:
-    "grid grid-cols-12 gap-x-6 [&>*+*]:relative [&>*+*]:before:absolute [&>*+*]:before:inset-y-0 [&>*+*]:before:-left-3 [&>*+*]:before:w-px [&>*+*]:before:bg-figure-rule [&>*+*]:before:content-[''] max-md:gap-y-16 max-md:[&>*+*]:border-figure-rule max-md:[&>*+*]:border-t max-md:[&>*+*]:pt-16 max-md:[&>*+*]:before:hidden",
+  cards: "flex flex-col gap-[120px] max-lg:gap-24 max-md:gap-20",
 } as const;
 
 export const CalloutSection = ({

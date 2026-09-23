@@ -186,9 +186,10 @@ const LandingPage = () => (
       subheadline={HERO.subheadline}
     />
     <CalloutSection body={SECTION.body} headline={SECTION.headline}>
-      {CALLOUTS.map((callout) => (
+      {CALLOUTS.map((callout, index) => (
         <CalloutCard
           body={callout.body}
+          flipped={index % 2 === 1}
           key={callout.label}
           label={callout.label}
           title={callout.title}
