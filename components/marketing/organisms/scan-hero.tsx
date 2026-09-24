@@ -37,7 +37,7 @@ type ScanHeroProperties = {
  *
  * The figure is drawn twice. Underneath, her shape in the ground colour at
  * full strength, cut from the image's own alpha; on top, the image itself at
- * 42%. Without the solid layer she is translucent, the field shows straight
+ * 34%. Without the solid layer she is translucent, the field shows straight
  * through her, and it reads as in front of her rather than behind.
  *
  * The ground matches the section below, so the hero runs straight into it
@@ -46,10 +46,10 @@ type ScanHeroProperties = {
 const classes = {
   section: "panel relative isolate overflow-hidden bg-figure-ground",
   figure:
-    "-translate-x-1/2 pointer-events-none absolute top-[20.56%] bottom-0 left-1/2 z-[1] aspect-[409/891] animate-hero-figure motion-reduce:animate-none",
+    "-translate-x-1/2 pointer-events-none absolute top-[20.56%] bottom-0 left-1/2 z-[1] aspect-[1027/2003] animate-hero-figure motion-reduce:animate-none",
   occluder:
     "absolute inset-0 bg-figure-ground [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain]",
-  image: "relative block size-full object-contain opacity-[0.42]",
+  image: "relative block size-full object-contain opacity-[0.34]",
   copy: "-translate-x-1/2 -translate-y-1/2 absolute top-[59%] left-1/2 z-[4] flex w-[min(1100px,calc(100%-48px))] flex-col items-center text-center",
   headline:
     "animate-hero-headline whitespace-nowrap text-[clamp(2.75rem,1rem+5vw,5.1rem)] text-spectrum-gradient capitalize leading-[1.371] tracking-[-0.01em] max-md:whitespace-normal motion-reduce:animate-none",
@@ -83,9 +83,9 @@ export const ScanHero = ({
           alt=""
           className={classes.image}
           decoding="async"
-          height={891}
+          height={2003}
           src={figureSrc}
-          width={409}
+          width={1027}
         />
       </div>
 

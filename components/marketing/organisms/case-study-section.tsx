@@ -2,7 +2,6 @@
 
 import { BiomarkerRange } from "@/components/marketing/atoms/biomarker-range";
 import { Heading } from "@/components/marketing/atoms/heading";
-import { StatBar } from "@/components/marketing/molecules/stat-bar";
 import type { CaseStudyResults } from "@/lib/biomarkers";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -24,6 +23,8 @@ export type CaseStudySlide = {
   subheadline: string;
   /** A still, painted edge to edge behind the words. */
   image: string;
+  /** Something laid over the still, such as a `MetricCard` of readings. */
+  overlay?: ReactNode;
 };
 
 type CaseStudySectionProperties = {
@@ -31,16 +32,16 @@ type CaseStudySectionProperties = {
   headline: string;
   /** A sentence or two under the headline. */
   subheadline: string;
-  /** Who the study follows, e.g. "Sarah, 41, avid runner". */
-  intro: string;
-  /** The live readings, as `StatSprite`s; the section puts them in the bar. */
-  stats: ReactNode;
+  /** Names the slider for assistive technology, e.g. "Sarah’s story". */
+  label: string;
   /** Full-bleed footage or still, painted behind the headline. */
   media: ReactNode;
   /** Their lab results, pinned over the biomarker strip. */
   caseStudy?: CaseStudyResults;
   /** The slides the study becomes the first of. */
   slides?: CaseStudySlide[];
+  /** A label on glass above the biomarker strip, naming whose panel it is. */
+  stripLabel?: string;
 };
 
 type SlideCardProperties = {
@@ -72,7 +73,7 @@ const WHEEL_COOLDOWN_MS = 900;
  * Nominal size for the slide stills. They are cropped to the card whatever
  * their real size, so this only gives the browser a shape to reserve.
  */
-const SLIDE_IMAGE_SIZE = { width: 1600, height: 1200 } as const;
+const SLIDE_IMAGE_SIZE = { width: 1000, height: 563 } as const;
 
 const clampUnit = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -87,7 +88,7 @@ const smoothstep = (value: number) => value * value * (3 - 2 * value);
  * next slides slide in behind it until the first peeks in from the right.
  * The biomarker strip rises from the bottom edge on the same progress, so
  * the card and the strip arrive together, and the headline waits until the
- * card has landed, then fades in. The bar at the top and the strip sit
+ * card has landed, then fades in. The strip sits
  * outside the mask: they belong to the panel, not to any one slide, and the
  * card settles in the space between them.
  *
@@ -104,12 +105,16 @@ const classes = {
   // The runway: 80vh of scroll past the panel, 60vh of it shrinking, so one
   // scroll gesture carries the footage into the card.
   section: "relative h-[calc(max(100dvh,680px)+80vh)] motion-reduce:h-auto",
-  // The card geometry. The mask insets are the settled card: under the bar
-  // at the top, above the tallest bar and its pins at the bottom, with the
-  // next slide peeking in from the right. The content inset is how far each
-  // slide keeps its words from the left and bottom edges of the card.
+  // The card geometry. The mask insets are the settled card: 96px from the
+  // top, above the strip and its label at the bottom (never nearer
+  // the floor than 144px), with the next slide peeking in from the right.
+  // The card is capped at 960px tall:
+  // on a tall window it keeps its top where it is and the spare height
+  // opens up above the strip, rather than stretching the card. 680px is the
+  // floor of the panel height, as in `panel`. The content inset is how far
+  // each slide keeps its words from the left and bottom edges of the card.
   stage:
-    "group/stage @container panel sticky top-0 isolate overflow-hidden bg-figure-ground [--card-w:calc(100cqw-var(--mask-l)-var(--mask-r))] [--gap:16px] [--mask-b:112px] [--mask-l:44px] [--mask-r:calc(var(--peek)+var(--gap))] [--mask-t:96px] [--content-inset:80px] [--p:0] [--peek:120px] [--radius:28px] max-sm:[--content-inset:24px] max-sm:[--gap:10px] max-sm:[--mask-l:16px] max-sm:[--mask-t:112px] max-sm:[--peek:28px] max-sm:[--radius:20px]",
+    "group/stage @container panel sticky top-0 isolate overflow-hidden bg-figure-ground [--card-w:calc(100cqw-var(--mask-l)-var(--mask-r))] [--gap:16px] [--card-max:960px] [--mask-b:max(144px,calc(max(100dvh,680px)-var(--mask-t)-var(--card-max)))] [--mask-l:44px] [--mask-r:calc(var(--peek)+var(--gap))] [--mask-t:96px] [--content-inset:80px] [--p:0] [--peek:120px] [--radius:28px] max-sm:[--content-inset:24px] max-sm:[--gap:10px] max-sm:[--mask-l:16px] max-sm:[--mask-t:112px] max-sm:[--peek:28px] max-sm:[--radius:20px]",
   track:
     "absolute inset-0 touch-pan-y select-none transition-[translate] duration-700 ease-arrive [translate:calc(var(--slide)*-1*(var(--card-w)+var(--gap)))_0] motion-reduce:transition-none",
   lead: "absolute inset-0 isolate bg-hero-gradient [clip-path:inset(calc(var(--p)*var(--mask-t))_calc(var(--p)*var(--mask-r))_calc(var(--p)*var(--mask-b))_calc(var(--p)*var(--mask-l))_round_calc(var(--p)*var(--radius)))]",
@@ -141,13 +146,24 @@ const classes = {
   // into the card.
   slideMessage:
     "absolute inset-x-[var(--content-inset)] bottom-[var(--content-inset)] flex flex-col items-start text-left transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-15",
+  // The same, on a slide with a card in the bottom-right corner: from 1280px,
+  // where the card sits beside the words, the right edge also clears the
+  // card (280px) and a 40px gap, so a long headline wraps before reaching it.
+  slideMessageBesideOverlay:
+    "absolute inset-x-[var(--content-inset)] bottom-[var(--content-inset)] flex flex-col items-start text-left transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-15 xl:right-[calc(var(--content-inset)+320px)]",
+  // In the bottom-right corner, the content inset in from both edges,
+  // opposite the words. Narrower than 1280px the card has no room for both
+  // side by side, so it moves to the top-left, and on a phone drops below
+  // the slider buttons in the top-right corner. It fades back while a
+  // marker is read, like the words.
+  slideOverlay:
+    "absolute right-[var(--content-inset)] bottom-[var(--content-inset)] transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-15 max-xl:top-[var(--content-inset)] max-xl:right-auto max-xl:bottom-auto max-xl:left-[var(--content-inset)] max-sm:top-[68px]",
   slideHeadline:
     "max-w-[min(17em,100%)] text-balance text-[clamp(1.75rem,1.2rem+1.6vw,2.75rem)] text-white tracking-[-0.01em] max-md:text-[22px] [@media(max-height:780px)]:text-[clamp(1.5rem,1.1rem+1.2vw,2.25rem)]",
   slideSubheadline:
     "mt-3 max-w-[480px] text-pretty font-sans text-[16px] text-white leading-6 max-md:mt-3 max-md:text-[14px] max-md:leading-5",
-  top: "absolute inset-x-0 top-0 z-10 flex justify-center px-11 pt-[34px] max-sm:px-6",
-  // Matches the value in `StatSprite`: if the readings change size, change this.
-  intro:
+  // Set as the readings in `StatSprite` are: if they change size, change this.
+  stripLabelText:
     "m-0 whitespace-nowrap font-sans font-semibold text-[13.5px] text-primary-foreground leading-none max-sm:text-[12px]",
   navShown:
     "absolute top-[calc(var(--mask-t)+16px)] right-[calc(var(--mask-r)+16px)] z-20 flex gap-2 opacity-100 transition-opacity duration-500 motion-reduce:transition-none",
@@ -161,6 +177,16 @@ const classes = {
   // it has landed.
   stripArriving:
     "pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[140px] opacity-[var(--p)] [translate:0_calc((1-var(--p))*100%)]",
+  // The label sits in the same frame as the track of bars in the strip,
+  // centred, capped at the page width and padded alike, so it stays left
+  // aligned with the first bar at any width. Just above the strip, which it
+  // names, and clear of the pins at full lift. It fades while a marker is
+  // read, because the readout can slide over it.
+  stripLabelRow:
+    "-translate-x-1/2 pointer-events-none absolute bottom-[88px] left-1/2 w-full max-w-page px-7 transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-0",
+  // The same frosted shell as the bar.
+  stripLabel:
+    "inline-flex items-center rounded-full border border-hero-glass-edge bg-hero-glass px-3.5 py-[7px] backdrop-blur-md max-sm:py-1.5",
   stripLanded:
     "absolute inset-x-0 bottom-0 z-20 h-[140px] opacity-[var(--p)] [translate:0_calc((1-var(--p))*100%)]",
 } as const;
@@ -230,23 +256,30 @@ const SlideCard = ({ slide, position, count }: SlideCardProperties) => (
       width={SLIDE_IMAGE_SIZE.width}
     />
     <div className={classes.slideScrim} />
-    <div className={classes.slideMessage}>
+    <div
+      className={
+        slide.overlay ? classes.slideMessageBesideOverlay : classes.slideMessage
+      }
+    >
       <Heading as={3} className={classes.slideHeadline} level={1}>
         {slide.headline}
       </Heading>
       <p className={classes.slideSubheadline}>{slide.subheadline}</p>
     </div>
+    {slide.overlay ? (
+      <div className={classes.slideOverlay}>{slide.overlay}</div>
+    ) : null}
   </article>
 );
 
 export const CaseStudySection = ({
   headline,
   subheadline,
-  intro,
-  stats,
+  label,
   media,
   caseStudy,
   slides = [],
+  stripLabel,
 }: CaseStudySectionProperties) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
@@ -335,7 +368,7 @@ export const CaseStudySection = ({
   return (
     <div className={classes.section} ref={sectionRef}>
       <section
-        aria-label={`${intro}, and more stories`}
+        aria-label={label}
         aria-roledescription="carousel"
         className={classes.stage}
         ref={stageRef}
@@ -376,12 +409,6 @@ export const CaseStudySection = ({
           ))}
         </div>
 
-        <div className={classes.top}>
-          <StatBar lead={<p className={classes.intro}>{intro}</p>}>
-            {stats}
-          </StatBar>
-        </div>
-
         {slides.length > 0 ? (
           <div
             className={settled ? classes.navShown : classes.navHidden}
@@ -414,6 +441,13 @@ export const CaseStudySection = ({
           className={settled ? classes.stripLanded : classes.stripArriving}
           inert={!settled}
         >
+          {stripLabel ? (
+            <div className={classes.stripLabelRow}>
+              <div className={classes.stripLabel}>
+                <p className={classes.stripLabelText}>{stripLabel}</p>
+              </div>
+            </div>
+          ) : null}
           <BiomarkerRange {...(caseStudy ? { caseStudy } : {})} />
         </div>
       </section>

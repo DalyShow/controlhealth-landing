@@ -1,23 +1,28 @@
-import { BrandLockup } from "@/components/marketing/atoms/brand-lockup";
-import { FootstepsIcon } from "@/components/marketing/atoms/footsteps-icon";
 import { AiInputVisual } from "@/components/marketing/atoms/ai-input-visual";
+import { BrandLockup } from "@/components/marketing/atoms/brand-lockup";
 import { ConnectPlatformVisual } from "@/components/marketing/atoms/connect-platform-visual";
+import { FootstepsIcon } from "@/components/marketing/atoms/footsteps-icon";
 import { HeroMedia } from "@/components/marketing/atoms/hero-media";
 import { LabPanelVisual } from "@/components/marketing/atoms/lab-panel-visual";
 import { RollingFigure } from "@/components/marketing/atoms/rolling-figure";
 import { TickingFigure } from "@/components/marketing/atoms/ticking-figure";
 import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
+import { CalloutCard } from "@/components/marketing/molecules/callout-card";
+import { MetricCard } from "@/components/marketing/molecules/metric-card";
 import type { NavLink } from "@/components/marketing/molecules/nav-links";
 import { StatBar } from "@/components/marketing/molecules/stat-bar";
 import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import type { TrustItem } from "@/components/marketing/molecules/trust-row";
-import { CalloutCard } from "@/components/marketing/molecules/callout-card";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import {
-  type CaseStudySlide,
   CaseStudySection,
+  type CaseStudySlide,
 } from "@/components/marketing/organisms/case-study-section";
 import { HeartRateSprite } from "@/components/marketing/organisms/heart-rate-sprite";
+import {
+  LabChecklist,
+  type LabGroup,
+} from "@/components/marketing/organisms/lab-checklist";
 import { LandingCta } from "@/components/marketing/organisms/landing-cta";
 import {
   type FooterColumn,
@@ -26,10 +31,26 @@ import {
 } from "@/components/marketing/organisms/landing-footer";
 import { LandingHero } from "@/components/marketing/organisms/landing-hero";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
+import { RunningHeartRate } from "@/components/marketing/organisms/running-heart-rate";
 import { ScanHero } from "@/components/marketing/organisms/scan-hero";
-import { assetPath } from "@/lib/asset-path";
+import {
+  type Signal,
+  SignalChips,
+} from "@/components/marketing/organisms/signal-chips";
+import { SleepReading } from "@/components/marketing/organisms/sleep-reading";
+import { TrendReading } from "@/components/marketing/organisms/trend-reading";
 import type { CaseStudyResults } from "@/lib/biomarkers";
-import { Activity, LockKeyhole, Moon, Shield } from "lucide-react";
+import { assetPath } from "@/lib/asset-path";
+import {
+  Activity,
+  BatteryFull,
+  BatteryLow,
+  FlaskConical,
+  Gauge,
+  LockKeyhole,
+  Moon,
+  Shield,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 type HeroVariant = "scan" | "media";
@@ -44,6 +65,13 @@ type Callout = {
 /**
  * Hero copy for the personalized-panel landing page.
  */
+const HERO = {
+  headline: "Measure what matters.",
+  subheadline:
+    "Build a more complete picture of your health with personalized testing.",
+  ctaLabel: "Get the Personalized Panel",
+} as const;
+
 /**
  * Which hero the page leads with. Both stay built and wired: the media hero
  * with its footage, stat bar and biomarker strip is kept, not removed, so
@@ -51,14 +79,11 @@ type Callout = {
  */
 const ACTIVE_HERO: HeroVariant = "scan";
 
-/**
- * The sections below the case study are built but hidden while the top of the
- * page is worked out as full-screen panels. Set to true to bring them back.
- */
-const SHOW_LOWER_SECTIONS = false;
+/** Names the case study slider for assistive technology. */
+const CASE_STUDY_LABEL = "Sarah’s story";
 
-/** Who the first case study follows. */
-const CASE_STUDY_INTRO = "Sarah, 41, avid runner";
+/** The label over the biomarker strip in the first case study. */
+const CASE_STUDY_STRIP_LABEL = "Sarah’s Personalized Panel";
 
 /**
  * Sarah's panel, from the case study. Only the results it states: serum iron,
@@ -128,30 +153,135 @@ const SARAH = {
 
 /** The first case study's headline and body. */
 const CASE_STUDY_MESSAGE = {
-  headline: "The Why Runs Deeper.",
+  headline: "She Knows What Strong Feels Like.",
   subheadline:
-    "One comprehensive at-home biomarker panel connects your wearable data to the biology behind it",
+    "At 36, Sarah is an experienced runner training for her third half marathon. She knows the difference between a tough run - and something feeling off.",
 } as const;
 
 /**
- * The slides the case study shrinks into the first of. Placeholder copy and
- * stills while the slides are designed.
+ * The shape of her week behind each reading on the slides, oldest first.
+ * Recovery slides, sleep holds, and fatigue climbs regardless.
+ */
+const RECOVERY_WEEK = [72, 70, 71, 66, 63, 64, 58, 54, 49, 45, 41];
+const SLEEP_WEEK = [7.6, 7.9, 7.7, 7.8, 8.0, 7.7, 7.8];
+const FATIGUE_WEEK = [34, 36, 35, 41, 44, 43, 50, 55, 58, 63, 68];
+/** Her recovery climbing back once she is treated, for the last slide. */
+const RECOVERY_RETURN = [41, 44, 43, 49, 53, 52, 58, 63, 67, 72, 78];
+
+/** The readings from the first two slides, recapped as the nurse reviews them. */
+const REVIEWED_SIGNALS = [
+  { label: "Heart rate", trend: "up" },
+  { label: "Recovery", trend: "down" },
+  { label: "Fatigue", trend: "up" },
+] satisfies Signal[];
+
+/** The labs the nurse orders: the groups behind her ten pinned results. */
+const ORDERED_LABS = [
+  { name: "Iron panel", markers: 3 },
+  { name: "Blood count", markers: 2 },
+  { name: "Thyroid", markers: 2 },
+  { name: "B12 & folate", markers: 2 },
+  { name: "Inflammation", markers: 1 },
+] satisfies LabGroup[];
+
+/**
+ * Her usual heart rate at her running pace. The first slide tells her
+ * reading against it.
+ */
+const USUAL_RUNNING_BPM = 152;
+
+/**
+ * The four slides that follow the case study once it has shrunk into the
+ * first card, telling her story through to the other side.
  */
 const CASE_STUDY_SLIDES = [
   {
-    headline: "Headline goes here",
-    subheadline: "Subheadline goes here",
-    image: assetPath("/media/video-4-poster.webp"),
+    headline: "Same Run. Different Story.",
+    subheadline:
+      "Her regular training suddenly felt harder. Her heart rate was climbing while her recovery kept falling - even though nothing in her routine had changed.",
+    image: assetPath("/media/slide-01-hilltop.webp"),
+    overlay: (
+      <MetricCard>
+        <RunningHeartRate state="strained" usualBpm={USUAL_RUNNING_BPM} />
+        <TrendReading
+          delta="Down 31 this week"
+          from={72}
+          icon={<BatteryLow strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          label="Recovery"
+          points={RECOVERY_WEEK}
+          suffix="%"
+          to={41}
+          trend="down"
+        />
+      </MetricCard>
+    ),
   },
   {
-    headline: "Headline goes here",
-    subheadline: "Subheadline goes here",
-    image: assetPath("/media/about-believe.webp"),
+    headline: "Rested on Paper. Running on Empty.",
+    subheadline:
+      "She was still getting nearly eight hours of sleep. But each day demanded more coffee, more snacks, and more effort just to keep up.",
+    image: assetPath("/media/slide-02-work.webp"),
+    overlay: (
+      <MetricCard>
+        <SleepReading
+          delta="In her usual range"
+          points={SLEEP_WEEK}
+          slept="7h 48m"
+        />
+        <TrendReading
+          delta="Up 34 this week"
+          from={34}
+          icon={<Gauge strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          label="Fatigue"
+          points={FATIGUE_WEEK}
+          to={68}
+          trend="up"
+          unit="/ 100"
+        />
+      </MetricCard>
+    ),
   },
   {
-    headline: "Headline goes here",
-    subheadline: "Subheadline goes here",
-    image: assetPath("/media/about-data.webp"),
+    headline: "The Pattern Called for a Closer Look.",
+    subheadline:
+      "Rather than dismissing it as a tough training cycle, Sarah chose to look deeper - ordering a comprehensive biomarker panel to investigate what might be driving the change.",
+    image: assetPath("/media/slide-03-nurse.webp"),
+    overlay: (
+      <MetricCard>
+        <SignalChips
+          icon={<Activity strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          label="Signals reviewed"
+          signals={REVIEWED_SIGNALS}
+        />
+        <LabChecklist
+          groups={ORDERED_LABS}
+          icon={<FlaskConical strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          label="Labs ordered"
+        />
+      </MetricCard>
+    ),
+  },
+  {
+    headline: "Better Than Back.",
+    subheadline:
+      "With clearer answers and an informed plan, Sarah returned to the trail. Her heart rate settled, her recovery climbed, and she wasn’t just back to baseline - she was moving beyond it.",
+    image: assetPath("/media/slide-04-final.webp"),
+    overlay: (
+      <MetricCard>
+        <RunningHeartRate state="settled" usualBpm={USUAL_RUNNING_BPM} />
+        <TrendReading
+          delta="Up 37 in six weeks"
+          from={41}
+          icon={<BatteryFull strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
+          label="Recovery"
+          points={RECOVERY_RETURN}
+          suffix="%"
+          to={78}
+          tone="calm"
+          trend="up"
+        />
+      </MetricCard>
+    ),
   },
 ] satisfies CaseStudySlide[];
 
@@ -162,19 +292,19 @@ const SCAN_HERO = {
   ctaLabel: "Get the Personalized Panel",
 } as const;
 
+/**
+ * The cut-out figure standing in front of the scan field. Versioned in the
+ * name: GitHub Pages caches assets for ten minutes, so a replacement image
+ * under the old name reaches returning visitors in the new layout late.
+ */
+const SCAN_HERO_FIGURE_SRC = assetPath("/media/hero-figure-5.webp");
+
 /** The reassurances along the bottom of the scan hero. */
 const TRUST = [
   { icon: Shield, label: "HIPAA-Aligned" },
   { icon: LockKeyhole, label: "Private by design" },
   { icon: Activity, label: "60k+ providers" },
 ] satisfies TrustItem[];
-
-const HERO = {
-  headline: "Measure what matters.",
-  subheadline:
-    "Build a more complete picture of your health with personalized testing.",
-  ctaLabel: "Get the Personalized Panel",
-} as const;
 
 /**
  * Primary navigation. Targets are placeholders until the sections exist.
@@ -192,6 +322,12 @@ const STEP_BEAT_MS = 900;
 
 /** Where the heart rate workout starts and returns to. */
 const RESTING_BPM = 58;
+
+const LOCKUP_SRC = assetPath("/assets/lockup-light.svg");
+
+/** Placeholder footage for the hero's media layer. */
+const HERO_MEDIA_SRC = assetPath("/media/video-3.mp4");
+const HERO_MEDIA_POSTER = assetPath("/media/video-3-poster.webp");
 
 /** Introduces the three callouts as one product rather than three features. */
 const SECTION = {
@@ -287,7 +423,7 @@ const HEROES = {
     <ScanHero
       body={SCAN_HERO.body}
       ctaLabel={SCAN_HERO.ctaLabel}
-      figureSrc={assetPath("/media/hero-figure-3.webp")}
+      figureSrc={SCAN_HERO_FIGURE_SRC}
       headline={SCAN_HERO.headline}
       trust={TRUST}
     />
@@ -296,12 +432,7 @@ const HEROES = {
     <LandingHero
       ctaLabel={HERO.ctaLabel}
       headline={HERO.headline}
-      media={
-        <HeroMedia
-          poster={assetPath("/media/video-3-poster.webp")}
-          src={assetPath("/media/video-3.mp4")}
-        />
-      }
+      media={<HeroMedia poster={HERO_MEDIA_POSTER} src={HERO_MEDIA_SRC} />}
       sprites={
         <StatBar>
           <StatSprite
@@ -326,6 +457,13 @@ const HEROES = {
 } satisfies Record<HeroVariant, ReactNode>;
 
 /**
+ * The "How Control Health works" callouts are built but hidden while the top
+ * of the page is worked out as full-screen panels. Set to true to bring them
+ * back, between the case study and the closing call to action.
+ */
+const SHOW_HOW_IT_WORKS = false;
+
+/**
  * The first case study: one person, their live readings, their footage, and
  * the biomarker strip. It reuses the media hero's pieces in its own section.
  */
@@ -333,36 +471,10 @@ const CASE_STUDY = (
   <CaseStudySection
     caseStudy={SARAH}
     headline={CASE_STUDY_MESSAGE.headline}
-    intro={CASE_STUDY_INTRO}
-    media={
-      <HeroMedia
-        poster={assetPath("/media/video-3-poster.webp")}
-        src={assetPath("/media/video-3.mp4")}
-      />
-    }
+    label={CASE_STUDY_LABEL}
+    media={<HeroMedia poster={HERO_MEDIA_POSTER} src={HERO_MEDIA_SRC} />}
     slides={CASE_STUDY_SLIDES}
-    stats={
-      // Keyed: the section is a client component, and a fragment handed to
-      // one from the server arrives as a list.
-      <>
-        <StatSprite
-          beatMs={STEP_BEAT_MS}
-          delta="12%"
-          figure={<TickingFigure base={14_804} />}
-          icon={<FootstepsIcon />}
-          key="steps"
-          label="Steps today"
-        />
-        <HeartRateSprite key="heart-rate" restingBpm={RESTING_BPM} />
-        <StatSprite
-          delta="+5m"
-          figure={<RollingFigure from="5h 00m" value="6h 52m" />}
-          icon={<Moon strokeWidth={SPRITE_ICON_STROKE_WIDTH} />}
-          key="sleep"
-          label="Sleep last night"
-        />
-      </>
-    }
+    stripLabel={CASE_STUDY_STRIP_LABEL}
     subheadline={CASE_STUDY_MESSAGE.subheadline}
   />
 );
@@ -376,42 +488,40 @@ const LandingPage = () => (
     <LandingNav
       ctaLabel={NAV_CTA_LABEL}
       links={NAV_LINKS}
-      logo={<BrandLockup src={assetPath("/assets/lockup-light.svg")} />}
+      logo={<BrandLockup src={LOCKUP_SRC} />}
       logoHref={assetPath("/")}
       logoLabel="Control Health, back to home"
     />
     {HEROES[ACTIVE_HERO]}
     {CASE_STUDY}
-    {SHOW_LOWER_SECTIONS ? (
-      <>
-        <CalloutSection body={SECTION.body} headline={SECTION.headline}>
-          {CALLOUTS.map((callout, index) => (
-            <CalloutCard
-              body={callout.body}
-              flipped={index % 2 === 1}
-              key={callout.label}
-              label={callout.label}
-              title={callout.title}
-              visual={CALLOUT_VISUALS[callout.label]}
-            />
-          ))}
-        </CalloutSection>
-        <LandingCta
-          ctaLabel={CTA.ctaLabel}
-          headline={CTA.headline}
-          subheadline={CTA.subheadline}
-        />
-        <LandingFooter
-          blurb={FOOTER.blurb}
-          columns={FOOTER_COLUMNS}
-          legal={FOOTER.legal}
-          markLabel={FOOTER.markLabel}
-          socials={SOCIALS}
-          statement={FOOTER.statement}
-          wordmarkSrc={assetPath("/assets/wordmark-light.svg")}
-        />
-      </>
+    {SHOW_HOW_IT_WORKS ? (
+      <CalloutSection body={SECTION.body} headline={SECTION.headline}>
+        {CALLOUTS.map((callout, index) => (
+          <CalloutCard
+            body={callout.body}
+            flipped={index % 2 === 1}
+            key={callout.label}
+            label={callout.label}
+            title={callout.title}
+            visual={CALLOUT_VISUALS[callout.label]}
+          />
+        ))}
+      </CalloutSection>
     ) : null}
+    <LandingCta
+      ctaLabel={CTA.ctaLabel}
+      headline={CTA.headline}
+      subheadline={CTA.subheadline}
+    />
+    <LandingFooter
+      blurb={FOOTER.blurb}
+      columns={FOOTER_COLUMNS}
+      legal={FOOTER.legal}
+      markLabel={FOOTER.markLabel}
+      socials={SOCIALS}
+      statement={FOOTER.statement}
+      wordmarkSrc={assetPath("/assets/wordmark-light.svg")}
+    />
   </main>
 );
 

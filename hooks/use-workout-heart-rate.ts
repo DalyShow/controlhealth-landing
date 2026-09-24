@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 export type HeartRateTrend = "up" | "down" | "steady";
 
-type Phase = {
+export type WorkoutPhase = {
   target: number;
   msPerStep: number;
 };
@@ -20,7 +20,7 @@ const WORKOUT = [
   { target: 104, msPerStep: 170 },
   { target: 158, msPerStep: 110 },
   { target: 58, msPerStep: 150 },
-] satisfies Phase[];
+] satisfies WorkoutPhase[];
 
 const trendFor = (bpm: number, target: number): HeartRateTrend => {
   if (target === bpm) {
@@ -31,15 +31,19 @@ const trendFor = (bpm: number, target: number): HeartRateTrend => {
 };
 
 /**
- * Drives a heart rate reading through a looping workout. Viewers who prefer
- * reduced motion get the resting figure, held still.
+ * Drives a heart rate reading through a looping workout, the interval
+ * session above unless another is given. It starts from `restingBpm`, and
+ * viewers who prefer reduced motion get that figure, held still.
  */
-export const useWorkoutHeartRate = (restingBpm: number) => {
+export const useWorkoutHeartRate = (
+  restingBpm: number,
+  workout: readonly WorkoutPhase[] = WORKOUT
+) => {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [bpm, setBpm] = useState(restingBpm);
   const [phaseIndex, setPhaseIndex] = useState(0);
 
-  const phase = WORKOUT[phaseIndex] ?? WORKOUT[0];
+  const phase = workout[phaseIndex] ?? workout[0] ?? WORKOUT[0];
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -47,7 +51,7 @@ export const useWorkoutHeartRate = (restingBpm: number) => {
     }
 
     if (bpm === phase.target) {
-      setPhaseIndex((index) => (index + 1) % WORKOUT.length);
+      setPhaseIndex((index) => (index + 1) % workout.length);
       return;
     }
 
@@ -56,7 +60,7 @@ export const useWorkoutHeartRate = (restingBpm: number) => {
     }, phase.msPerStep);
 
     return () => window.clearTimeout(timer);
-  }, [bpm, phase, prefersReducedMotion]);
+  }, [bpm, phase, prefersReducedMotion, workout.length]);
 
   return {
     bpm,

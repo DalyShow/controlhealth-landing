@@ -142,18 +142,17 @@ const classes = {
   system:
     "font-medium font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--tone)] max-md:text-[11px]",
   name: "mt-2 font-display text-[30px] text-primary-foreground leading-[1.15] max-md:text-[24px] [@media(max-height:780px)]:text-[26px]",
-  note: "mt-2 text-pretty font-sans text-[16px] text-figure-body leading-[1.5] max-md:text-[14px] [@media(max-height:780px)]:text-[15px]",
+  // A narrower measure than the readout, so the note breaks into short lines
+  // and the readout stays compact.
+  note: "mx-auto mt-2 max-w-[380px] text-pretty font-sans text-[16px] text-figure-body leading-[1.5] max-md:text-[14px] [@media(max-height:780px)]:text-[15px]",
   tagRow:
     "mt-3.5 flex flex-wrap items-center justify-center gap-2 [@media(max-height:780px)]:mt-3",
-  // A person's reading, beside the generic standard-panel tag. A finding is
+  // A person's reading, on the markers the case study covers. A finding is
   // filled with its system's tone; a clear result is only outlined.
   resultFinding:
     "inline-block rounded-full bg-[var(--tone)] px-3 py-1.5 font-mono text-[12px] text-primary-950 uppercase tracking-[0.1em] max-md:text-[11px]",
   resultClear:
     "inline-block rounded-full border border-white/40 px-3 py-1.5 font-mono text-[12px] text-white/85 uppercase tracking-[0.1em] max-md:text-[11px]",
-  tag: "inline-block rounded-full border px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.1em] max-md:text-[11px]",
-  tagCovered: "border-primary-100/45 text-primary-100",
-  tagMissing: "border-[var(--tone)] bg-[var(--tone)]/12 text-[var(--tone)]",
   // The pins share the track's box, so a bar's offset within the track is its
   // position here too. They cannot live inside the track: its children are
   // the bars, and bars are found by their index among them.
@@ -274,7 +273,7 @@ type ResultTagProperties = {
   result: BiomarkerResult | undefined;
 };
 
-/** The person's reading, shown beside the generic standard-panel tag. */
+/** The person's reading, shown under the note on the markers they have. */
 const ResultTag = ({ person, result }: ResultTagProperties) => {
   if (!(person && result)) {
     return null;
@@ -305,11 +304,7 @@ const describeMarker = (
     result && caseStudy
       ? `${caseStudy.person}: ${result.reading}. ${result.meaning}`
       : marker.note;
-  const coverage = marker.covered
-    ? "In a standard panel."
-    : "Not in a standard panel.";
-
-  return `${marker.name}. ${BIOMARKER_SYSTEMS[marker.system].label}. ${detail} ${coverage}`;
+  return `${marker.name}. ${BIOMARKER_SYSTEMS[marker.system].label}. ${detail}`;
 };
 
 type ReadoutContentProperties = {
@@ -319,27 +314,24 @@ type ReadoutContentProperties = {
 
 /**
  * The readout's text. For a marker the case study covers, what it meant for
- * this person takes the generic note's place, so the readout keeps its
- * height, and their reading leads the tags.
+ * this person takes the generic note's place, with their reading beneath.
+ * Every other marker has only its note, and no row where the reading would
+ * go.
  */
 const ReadoutContent = ({ marker, caseStudy }: ReadoutContentProperties) => {
   const system = marker ? BIOMARKER_SYSTEMS[marker.system] : null;
   const result = marker ? caseStudy?.results[marker.name] : undefined;
-  const covered = Boolean(marker?.covered);
 
   return (
     <>
       <p className={classes.system}>{system?.label}</p>
       <p className={classes.name}>{marker?.name}</p>
       <p className={classes.note}>{result?.meaning ?? marker?.note}</p>
-      <p className={classes.tagRow}>
-        <ResultTag person={caseStudy?.person} result={result} />
-        <span
-          className={`${classes.tag} ${covered ? classes.tagCovered : classes.tagMissing}`}
-        >
-          {covered ? "in a standard panel" : "not in a standard panel"}
-        </span>
-      </p>
+      {result ? (
+        <p className={classes.tagRow}>
+          <ResultTag person={caseStudy?.person} result={result} />
+        </p>
+      ) : null}
     </>
   );
 };

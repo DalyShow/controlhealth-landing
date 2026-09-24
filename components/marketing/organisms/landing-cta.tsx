@@ -19,7 +19,9 @@ type LandingCtaProperties = {
  * weight on the page rather than of rank in the outline.
  */
 const classes = {
-  section: "w-full bg-figure-ground pt-32 pb-64 max-md:pt-16 max-md:pb-40",
+  // The same padding above and below, so the message sits centred between
+  // the case study strip above and the footer rule below.
+  section: "w-full bg-figure-ground py-64 max-md:py-40",
   shell: "mx-auto w-full max-w-page px-24 max-xl:px-10 max-sm:px-6",
   grid: "grid grid-cols-12 gap-x-6",
   inner:

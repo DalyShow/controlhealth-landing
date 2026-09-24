@@ -26,6 +26,11 @@ type Scene = {
   /** 0 to 1 while the scan is crossing, outside that range otherwise. */
   sweep: number;
   scanX: number;
+  /**
+   * How strongly the glow around the scan shows: 1 while it crosses, easing
+   * to 0 after it leaves rather than switching off with it.
+   */
+  glow: number;
   /** 1 while the picks hold, falling to 0 as they clear for the next round. */
   clear: number;
   still: boolean;
@@ -94,7 +99,7 @@ const PICK_ROW_SHARE = 0.68;
  * the first scan is otherwise timed off the field's own fade (see
  * `firstSweepAt`), so the theme's `hero-field` token is the single source.
  */
-const FALLBACK_FIRST_SWEEP_MS = 6800;
+const FALLBACK_FIRST_SWEEP_MS = 2800;
 
 const SWEEP_FROM_S = 0.3;
 const SWEEP_S = 5.5;
@@ -111,6 +116,14 @@ const SCAN_OVERSHOOT = 40;
 /** Glow falloff around the scan: a long tail behind it, a sharp edge ahead. */
 const TRAIL_PX = 170;
 const LEAD_PX = 26;
+
+/**
+ * How long the glow takes to die away once the scan has left the far edge.
+ * The line itself is off screen by then, but its long tail is still lighting
+ * the last columns, and cutting that at the end of the sweep reads as the
+ * field switching off.
+ */
+const GLOW_FADE_S = 1.2;
 
 const GRID_ALPHA = 0.5;
 const GRID_GLOW_ALPHA = 0.35;
@@ -208,15 +221,17 @@ const placePicks = (
 
 /** How strongly the scan lights a column at `x`. */
 const glowAt = (scene: Scene, x: number) => {
-  if (scene.sweep < 0 || scene.sweep > 1) {
+  if (scene.glow <= 0) {
     return 0;
   }
 
   const distance = x - scene.scanX;
+  const falloff =
+    distance <= 0
+      ? Math.exp(distance / TRAIL_PX)
+      : Math.exp(-distance / LEAD_PX);
 
-  return distance <= 0
-    ? Math.exp(distance / TRAIL_PX)
-    : Math.exp(-distance / LEAD_PX);
+  return falloff * scene.glow;
 };
 
 const drawGrid = (ctx: CanvasRenderingContext2D, scene: Scene) => {
@@ -372,6 +387,7 @@ const advance = (scene: Scene, now: number) => {
   if (scene.still || now < scene.firstSweepAt) {
     scene.roundTime = null;
     scene.sweep = -1;
+    scene.glow = 0;
     scene.clear = 1;
     return;
   }
@@ -387,6 +403,14 @@ const advance = (scene: Scene, now: number) => {
     (scene.width + SCAN_OVERSHOOT * 2) * sweepPositionAt(sweep);
   scene.clear =
     roundTime < clearFrom ? 1 : clamp01(1 - (roundTime - clearFrom) / CLEAR_S);
+
+  // Full while crossing; after, a smoothstep down to nothing, gentle at both
+  // ends so the tail neither drops at first nor stops abruptly at the last.
+  const fadeProgress = clamp01(
+    (roundTime - (SWEEP_FROM_S + SWEEP_S)) / GLOW_FADE_S
+  );
+  scene.glow =
+    sweep < 0 ? 0 : 1 - fadeProgress * fadeProgress * (3 - 2 * fadeProgress);
 };
 
 /**
@@ -426,6 +450,7 @@ export const ScanField = () => {
       roundTime: null,
       sweep: -1,
       scanX: 0,
+      glow: 0,
       clear: 1,
       still: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     };
