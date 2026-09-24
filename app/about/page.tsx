@@ -19,7 +19,7 @@ import type { Metadata } from "next";
 const NAV_LINKS = [
   { label: "About us", href: assetPath("/about") },
   { label: "Pricing", href: assetPath("/pricing") },
-  { label: "How it works", href: "#how-it-works" },
+  { label: "How it works", href: assetPath("/how-it-works") },
 ] satisfies NavLink[];
 
 const NAV_CTA_LABEL = "Join the waitlist";
@@ -120,7 +120,7 @@ const FOOTER_COLUMNS = [
     heading: "Product",
     links: [
       { label: "Pricing", href: assetPath("/pricing") },
-      { label: "How it works", href: "#how-it-works" },
+      { label: "How it works", href: assetPath("/how-it-works") },
     ],
   },
   {

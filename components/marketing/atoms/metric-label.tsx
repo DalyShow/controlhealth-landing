@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
 type MetricLabelProperties = {
-  icon: ReactNode;
+  /** A glyph beside the name. Left out, the name stands alone. */
+  icon?: ReactNode;
   label: string;
 };
 
@@ -18,9 +19,11 @@ const classes = {
 
 export const MetricLabel = ({ icon, label }: MetricLabelProperties) => (
   <div className={classes.root}>
-    <span aria-hidden="true" className={classes.icon}>
-      {icon}
-    </span>
+    {icon ? (
+      <span aria-hidden="true" className={classes.icon}>
+        {icon}
+      </span>
+    ) : null}
     <span className={classes.label}>{label}</span>
   </div>
 );

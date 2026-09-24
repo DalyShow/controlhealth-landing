@@ -40,7 +40,17 @@ const trailClass = (isStill: boolean, isLeadActive: boolean) => {
   return isLeadActive ? classes.trailLifted : classes.trailPlanted;
 };
 
-export const FootstepsIcon = () => {
+type FootstepsIconProperties = {
+  /**
+   * Line weight, in units of the 24-unit drawing. The stat bar weight by
+   * default; drawn larger, it wants less to keep the same weight on screen.
+   */
+  strokeWidth?: number;
+};
+
+export const FootstepsIcon = ({
+  strokeWidth = SPRITE_ICON_STROKE_WIDTH,
+}: FootstepsIconProperties) => {
   const beat = useStepBeat();
   const prefersReducedMotion = usePrefersReducedMotion();
   const isLeadActive = beat % 2 === 0;
@@ -53,7 +63,7 @@ export const FootstepsIcon = () => {
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth={SPRITE_ICON_STROKE_WIDTH}
+      strokeWidth={strokeWidth}
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
     >

@@ -45,6 +45,19 @@ const BAND_TO = 0.72;
 
 const PANEL = { x: -100, y: -18, width: 192, height: 114, radius: 16 } as const;
 
+/**
+ * Compact, the grid is scanned inside the panel rather than above it: moved
+ * down this far, it sits centred in the card, which fills in only once the
+ * grid has faded, so the whole figure happens in one place.
+ */
+const COMPACT_SHIFT = 112;
+
+/** The drawing box for each layout: compact is cropped to the card alone. */
+const VIEW_BOX = {
+  full: "-128 -124 256 228",
+  compact: "-106 -26 204 130",
+} as const;
+
 const ROW_Y = [0, 26, 52, 78] as const;
 
 /** Varied so the rows read as different markers rather than one repeated row. */
@@ -71,6 +84,44 @@ const keyframes = (name: string, stops: Stop[]) =>
   `@keyframes ${name}{${stops
     .map(([at, declarations]) => `${round(at)}%{${declarations}}`)
     .join("")}}`;
+
+/**
+ * The picks, one set of keyframes per layout: each starts on its place in
+ * the grid, `shift` down for the compact layout, and travels to its row.
+ */
+const pickFrames = (name: string, shift: number) => [
+  // Each pick lives at its panel position and is offset back onto the grid
+  // for the first half of the cycle. That way the resting state is the
+  // finished panel, and reduced motion needs nothing but the scan hidden.
+  ...PICKS.map((pick, index) => {
+    const hit = sweepAt(pick.col);
+    const at = `translate:${round(gridX(pick.col) - MARKER_X)}px ${round(
+      gridY(pick.row) + shift - (ROW_Y[index] ?? 0)
+    )}px`;
+    const moveStart = 40 + index * 2;
+    const moveEnd = 54 + index * 2;
+    const loose = "fill:transparent;stroke:var(--color-figure-line-dim)";
+    const lit =
+      "fill:var(--color-figure-accent);stroke:var(--color-figure-accent)";
+    const placed =
+      "fill:var(--color-figure-line-bright);stroke:var(--color-figure-line-bright)";
+
+    return keyframes(`${name}-${index}`, [
+      [0, `opacity:0;scale:1;${at};${loose}`],
+      [4, "opacity:0.5"],
+      [hit, `opacity:0.5;scale:1;${loose}`],
+      [hit + 3, `opacity:1;scale:1.8;${lit}`],
+      [hit + 8, "scale:1.35"],
+      [moveStart, `scale:1.35;${at}`],
+      [moveEnd, "scale:1;translate:0 0"],
+      // Cools once placed, leaving the accent to mean selection and the flag.
+      [moveEnd + 6, placed],
+      [92, "opacity:1;translate:0 0"],
+      [96, "opacity:0"],
+      [100, "opacity:0;translate:0 0"],
+    ]);
+  }),
+];
 
 /**
  * Every part of the figure is timed as a percentage of one shared cycle, so
@@ -157,37 +208,8 @@ const LAB_KEYFRAMES = [
     ]);
   }),
 
-  // Each pick lives at its panel position and is offset back onto the grid
-  // for the first half of the cycle. That way the resting state is the
-  // finished panel, and reduced motion needs nothing but the scan hidden.
-  ...PICKS.map((pick, index) => {
-    const hit = sweepAt(pick.col);
-    const at = `translate:${round(gridX(pick.col) - MARKER_X)}px ${round(
-      gridY(pick.row) - (ROW_Y[index] ?? 0)
-    )}px`;
-    const moveStart = 40 + index * 2;
-    const moveEnd = 54 + index * 2;
-    const loose = "fill:transparent;stroke:var(--color-figure-line-dim)";
-    const lit =
-      "fill:var(--color-figure-accent);stroke:var(--color-figure-accent)";
-    const placed =
-      "fill:var(--color-figure-line-bright);stroke:var(--color-figure-line-bright)";
-
-    return keyframes(`lab-pick-${index}`, [
-      [0, `opacity:0;scale:1;${at};${loose}`],
-      [4, "opacity:0.5"],
-      [hit, `opacity:0.5;scale:1;${loose}`],
-      [hit + 3, `opacity:1;scale:1.8;${lit}`],
-      [hit + 8, "scale:1.35"],
-      [moveStart, `scale:1.35;${at}`],
-      [moveEnd, "scale:1;translate:0 0"],
-      // Cools once placed, leaving the accent to mean selection and the flag.
-      [moveEnd + 6, placed],
-      [92, "opacity:1;translate:0 0"],
-      [96, "opacity:0"],
-      [100, "opacity:0;translate:0 0"],
-    ]);
-  }),
+  ...pickFrames("lab-pick", 0),
+  ...pickFrames("lab-pick-compact", COMPACT_SHIFT),
 ].join("");
 
 /**
@@ -218,8 +240,19 @@ const classes = {
   pick: "fill-figure-line-bright stroke-figure-line-bright [stroke-width:1.01] [transform-box:fill-box] [transform-origin:center]",
 } as const;
 
-const runs = (name: string, easing = "linear"): CSSProperties => ({
-  animation: `${name} ${CYCLE_S}s ${easing} ${FIGURE_CYCLES}`,
+/**
+ * Plays a keyframe set for the figure's cycles. The parts that make up the
+ * finished panel rest on their own styles once the cycles end, which are the
+ * finished panel. The scan's parts (`hold`) instead keep the last frame, in
+ * which they have faded out: left to fall back to their own styles, the grid,
+ * its halos and the sweep would reappear over the resting panel.
+ */
+const runs = (
+  name: string,
+  easing = "linear",
+  hold = false
+): CSSProperties => ({
+  animation: `${name} ${CYCLE_S}s ${easing} ${FIGURE_CYCLES}${hold ? " forwards" : ""}`,
 });
 
 const EASE_SETTLE = "cubic-bezier(.22,.9,.3,1)";
@@ -243,12 +276,74 @@ const CARD_PATH = roundedRectPath(
 
 const isFlagged = (value: number) => value < BAND_FROM || value > BAND_TO;
 
-export const LabPanelVisual = () => {
+type LabPanelVisualProperties = {
+  /**
+   * Scan the grid inside the panel instead of above it, so the figure plays
+   * out in one place, cropped to the card, for a widget or a tight space.
+   * The card then has no fill or outline of its own, and sits on the glass
+   * of whatever holds it.
+   */
+  compact?: boolean;
+};
+
+export const LabPanelVisual = ({
+  compact = false,
+}: LabPanelVisualProperties) => {
   const figureRef = useRef<SVGSVGElement>(null);
 
   // Plays its couple of cycles when it arrives and rests after, rather
   // than animating forever behind whatever you are actually reading.
   useReplayInView(figureRef);
+
+  // Compact, the figure sits on the glass of whatever holds it, so the card
+  // has no pane of its own: only its rows are drawn.
+  const cardPane = compact ? null : (
+    <path className={classes.card} d={CARD_PATH} />
+  );
+
+  // The panel the picks assemble into.
+  const cardLayer = (
+    <g style={runs("lab-card")}>
+      {cardPane}
+
+      {ROW_Y.map((y, index) => (
+        <g key={y} style={runs(`lab-row-${index}`)}>
+          <rect
+            className={classes.label}
+            height={5}
+            rx={2.5}
+            width={LABEL_W[index]}
+            x={-76}
+            y={y - 2.5}
+          />
+          {/* A thin rule for the full range, a thicker segment for the
+              window, so the row reads as a reference range and not a bar. */}
+          <rect
+            className={classes.track}
+            height={1.5}
+            rx={0.75}
+            width={TRACK_W}
+            x={TRACK_X}
+            y={y - 0.75}
+          />
+          <rect
+            className={classes.band}
+            height={5}
+            rx={2.5}
+            width={(BAND_TO - BAND_FROM) * TRACK_W}
+            x={trackAt(BAND_FROM)}
+            y={y - 2.5}
+          />
+        </g>
+      ))}
+    </g>
+  );
+
+  // The card goes under the grid when the two share a place, and after it,
+  // below, when they do not.
+  const cardUnder = compact ? cardLayer : null;
+  const cardOver = compact ? null : cardLayer;
+  const gridShift = `translate(0 ${compact ? COMPACT_SHIFT : 0})`;
 
   return (
     <svg
@@ -259,7 +354,7 @@ export const LabPanelVisual = () => {
       ref={figureRef}
       strokeLinecap="round"
       strokeLinejoin="round"
-      viewBox="-128 -124 256 228"
+      viewBox={compact ? VIEW_BOX.compact : VIEW_BOX.full}
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
@@ -271,75 +366,47 @@ export const LabPanelVisual = () => {
 
       <style>{LAB_KEYFRAMES}</style>
 
+      {/* Compact, the card is laid first and the grid is scanned over its dim
+          glass, moved down into it; otherwise the grid is above the card. */}
+      {cardUnder}
+
       {/* Everything that could be measured, and the scan reading across it. */}
-      <g data-figure-transient="">
-        {LOOSE.map(({ col, row }) => (
-          <circle
-            className={classes.dot}
-            cx={gridX(col)}
-            cy={gridY(row)}
-            key={`${col}-${row}`}
-            r={3}
-            style={runs(`lab-scan-${col}`)}
-          />
-        ))}
+      <g transform={gridShift}>
+        <g data-figure-transient="">
+          {LOOSE.map(({ col, row }) => (
+            <circle
+              className={classes.dot}
+              cx={gridX(col)}
+              cy={gridY(row)}
+              key={`${col}-${row}`}
+              r={3}
+              style={runs(`lab-scan-${col}`, "linear", true)}
+            />
+          ))}
 
-        {PICKS.map((pick, index) => (
-          <circle
-            className={classes.halo}
-            cx={gridX(pick.col)}
-            cy={gridY(pick.row)}
-            key={`${pick.col}-${pick.row}`}
-            r={3}
-            style={runs(`lab-halo-${index}`, "ease-out")}
-          />
-        ))}
+          {PICKS.map((pick, index) => (
+            <circle
+              className={classes.halo}
+              cx={gridX(pick.col)}
+              cy={gridY(pick.row)}
+              key={`${pick.col}-${pick.row}`}
+              r={3}
+              style={runs(`lab-halo-${index}`, "ease-out", true)}
+            />
+          ))}
 
-        <line
-          className={classes.sweep}
-          style={runs("lab-sweep")}
-          x1={0}
-          x2={0}
-          y1={-112}
-          y2={-34}
-        />
+          <line
+            className={classes.sweep}
+            style={runs("lab-sweep", "linear", true)}
+            x1={0}
+            x2={0}
+            y1={-112}
+            y2={-34}
+          />
+        </g>
       </g>
 
-      {/* The panel the picks assemble into. */}
-      <g style={runs("lab-card")}>
-        <path className={classes.card} d={CARD_PATH} />
-
-        {ROW_Y.map((y, index) => (
-          <g key={y} style={runs(`lab-row-${index}`)}>
-            <rect
-              className={classes.label}
-              height={5}
-              rx={2.5}
-              width={LABEL_W[index]}
-              x={-76}
-              y={y - 2.5}
-            />
-            {/* A thin rule for the full range, a thicker segment for the
-                window, so the row reads as a reference range and not a bar. */}
-            <rect
-              className={classes.track}
-              height={1.5}
-              rx={0.75}
-              width={TRACK_W}
-              x={TRACK_X}
-              y={y - 0.75}
-            />
-            <rect
-              className={classes.band}
-              height={5}
-              rx={2.5}
-              width={(BAND_TO - BAND_FROM) * TRACK_W}
-              x={trackAt(BAND_FROM)}
-              y={y - 2.5}
-            />
-          </g>
-        ))}
-      </g>
+      {cardOver}
 
       {PICKS.map((pick, index) => (
         <circle
@@ -363,7 +430,10 @@ export const LabPanelVisual = () => {
           cy={ROW_Y[index]}
           key={`pick-${pick.col}`}
           r={3.4}
-          style={runs(`lab-pick-${index}`, EASE_CARRY)}
+          style={runs(
+            `${compact ? "lab-pick-compact" : "lab-pick"}-${index}`,
+            EASE_CARRY
+          )}
         />
       ))}
     </svg>

@@ -12,7 +12,8 @@ export type MetricTrend = "up" | "down" | "steady";
 export type MetricTone = "warning" | "calm";
 
 type MetricReadingProperties = {
-  icon: ReactNode;
+  /** A glyph beside the name. Left out, the name stands alone. */
+  icon?: ReactNode;
   label: string;
   /** The reading itself, which may be animated. */
   figure: ReactNode;
@@ -91,7 +92,7 @@ export const MetricReading = ({
 
   return (
     <div className={classes.root}>
-      <MetricLabel icon={icon} label={label} />
+      <MetricLabel label={label} {...(icon ? { icon } : {})} />
 
       <div className={classes.body}>
         <p className={classes.figure}>
