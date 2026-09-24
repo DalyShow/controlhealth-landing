@@ -1,8 +1,7 @@
 "use client";
 
-import { BiomarkerRange } from "@/components/marketing/atoms/biomarker-range";
 import { Heading } from "@/components/marketing/atoms/heading";
-import type { CaseStudyResults } from "@/lib/biomarkers";
+import { HeroMediaPausedContext } from "@/components/marketing/atoms/hero-media";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   type CSSProperties,
@@ -36,12 +35,8 @@ type CaseStudySectionProperties = {
   label: string;
   /** Full-bleed footage or still, painted behind the headline. */
   media: ReactNode;
-  /** Their lab results, pinned over the biomarker strip. */
-  caseStudy?: CaseStudyResults;
   /** The slides the study becomes the first of. */
   slides?: CaseStudySlide[];
-  /** A label on glass above the biomarker strip, naming whose panel it is. */
-  stripLabel?: string;
 };
 
 type SlideCardProperties = {
@@ -86,11 +81,8 @@ const smoothstep = (value: number) => value * value * (3 - 2 * value);
  *
  * The panel pins while the footage is masked down to a rounded card, and the
  * next slides slide in behind it until the first peeks in from the right.
- * The biomarker strip rises from the bottom edge on the same progress, so
- * the card and the strip arrive together, and the headline waits until the
- * card has landed, then fades in. The strip sits
- * outside the mask: they belong to the panel, not to any one slide, and the
- * card settles in the space between them.
+ * The headline waits until the card has landed, then fades in. Her
+ * biomarker panel follows in a section of its own.
  *
  * Scroll writes one number, `--p`, from 0 to 1, onto the stage. Every moving
  * part is CSS derived from it and from the card geometry set on the stage, so
@@ -105,16 +97,15 @@ const classes = {
   // The runway: 80vh of scroll past the panel, 60vh of it shrinking, so one
   // scroll gesture carries the footage into the card.
   section: "relative h-[calc(max(100dvh,680px)+80vh)] motion-reduce:h-auto",
-  // The card geometry. The mask insets are the settled card: 96px from the
-  // top, above the strip and its label at the bottom (never nearer
-  // the floor than 144px), with the next slide peeking in from the right.
-  // The card is capped at 960px tall:
-  // on a tall window it keeps its top where it is and the spare height
-  // opens up above the strip, rather than stretching the card. 680px is the
+  // The card geometry. The mask insets are the settled card: 96px in from
+  // the top and at least as far from the bottom, with the next slide peeking
+  // in from the right. The card is capped at 960px tall: on a tall window it
+  // keeps its top where it is and the spare height opens up below, rather
+  // than stretching the card. 680px is the
   // floor of the panel height, as in `panel`. The content inset is how far
   // each slide keeps its words from the left and bottom edges of the card.
   stage:
-    "group/stage @container panel sticky top-0 isolate overflow-hidden bg-figure-ground [--card-w:calc(100cqw-var(--mask-l)-var(--mask-r))] [--gap:16px] [--card-max:960px] [--mask-b:max(144px,calc(max(100dvh,680px)-var(--mask-t)-var(--card-max)))] [--mask-l:44px] [--mask-r:calc(var(--peek)+var(--gap))] [--mask-t:96px] [--content-inset:80px] [--p:0] [--peek:120px] [--radius:28px] max-sm:[--content-inset:24px] max-sm:[--gap:10px] max-sm:[--mask-l:16px] max-sm:[--mask-t:112px] max-sm:[--peek:28px] max-sm:[--radius:20px]",
+    "@container panel sticky top-0 isolate overflow-hidden bg-figure-ground [--card-w:calc(100cqw-var(--mask-l)-var(--mask-r))] [--gap:16px] [--card-max:960px] [--mask-b:max(96px,calc(max(100dvh,680px)-var(--mask-t)-var(--card-max)))] [--mask-l:44px] [--mask-r:calc(var(--peek)+var(--gap))] [--mask-t:96px] [--content-inset:80px] [--p:0] [--peek:120px] [--radius:28px] max-sm:[--content-inset:24px] max-sm:[--gap:10px] max-sm:[--mask-l:16px] max-sm:[--mask-t:112px] max-sm:[--peek:28px] max-sm:[--radius:20px]",
   track:
     "absolute inset-0 touch-pan-y select-none transition-[translate] duration-700 ease-arrive [translate:calc(var(--slide)*-1*(var(--card-w)+var(--gap)))_0] motion-reduce:transition-none",
   lead: "absolute inset-0 isolate bg-hero-gradient [clip-path:inset(calc(var(--p)*var(--mask-t))_calc(var(--p)*var(--mask-r))_calc(var(--p)*var(--mask-b))_calc(var(--p)*var(--mask-l))_round_calc(var(--p)*var(--radius)))]",
@@ -126,69 +117,54 @@ const classes = {
   // The lead headline is held back while the footage is full-bleed and
   // shrinking, and fades in once the card has landed, in the same place and
   // at the same size as every other slide: anchored to the bottom-left
-  // corner of the card, the content inset in from both edges. It fades back
-  // while a marker is read, like theirs.
+  // corner of the card, the content inset in from both edges.
   leadMessageHidden:
     "pointer-events-none absolute bottom-[calc(var(--mask-b)+var(--content-inset))] left-[calc(var(--mask-l)+var(--content-inset))] z-10 flex w-[calc(var(--card-w)-2*var(--content-inset))] flex-col items-start text-left opacity-0 transition-opacity duration-300 motion-reduce:transition-none",
   leadMessageShown:
-    "absolute bottom-[calc(var(--mask-b)+var(--content-inset))] left-[calc(var(--mask-l)+var(--content-inset))] z-10 flex w-[calc(var(--card-w)-2*var(--content-inset))] flex-col items-start text-left opacity-100 transition-opacity delay-150 duration-700 ease-out group-has-[[role=slider][aria-valuetext]]/stage:opacity-15 group-has-[[role=slider][aria-valuetext]]/stage:delay-0 group-has-[[role=slider][aria-valuetext]]/stage:duration-300 motion-reduce:transition-none",
+    "absolute bottom-[calc(var(--mask-b)+var(--content-inset))] left-[calc(var(--mask-l)+var(--content-inset))] z-10 flex w-[calc(var(--card-w)-2*var(--content-inset))] flex-col items-start text-left opacity-100 transition-opacity delay-150 duration-700 ease-out motion-reduce:transition-none",
   // Laid out where the settled slider puts it, and pushed right by the peek
   // until the shrink lands, which puts the first one just off screen at the
   // start.
   slide:
-    "absolute top-[var(--mask-t)] bottom-[var(--mask-b)] left-[calc(var(--mask-l)+var(--i)*(var(--card-w)+var(--gap)))] w-[var(--card-w)] overflow-hidden rounded-[var(--radius)] bg-primary-950 [translate:calc((1-var(--p))*var(--peek))_0]",
+    "absolute top-[var(--mask-t)] bottom-[var(--mask-b)] left-[calc(var(--mask-l)+var(--i)*(var(--card-w)+var(--gap)))] w-[var(--card-w)] overflow-hidden rounded-[var(--radius)] bg-primary-950 shadow-slide [translate:calc((1-var(--p))*var(--peek))_0]",
+  // The shadow of the first card. The card is the footage masked down, and
+  // a mask clips everything outside it, a shadow included, so the shadow is
+  // this box behind it in the settled card position, fading in as the card
+  // forms. Inside the track, so it moves with the card.
+  leadShadow:
+    "pointer-events-none absolute top-[var(--mask-t)] bottom-[var(--mask-b)] left-[var(--mask-l)] w-[var(--card-w)] rounded-[var(--radius)] opacity-[var(--p)] shadow-slide",
   slideImage: "pointer-events-none absolute inset-0 size-full object-cover",
   // Darkest under the words, at the bottom.
   slideScrim:
     "absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/0",
   // Anchored to the bottom-left corner, the content inset in from both
-  // edges. It fades back while a marker is read, because the readout rises
-  // into the card.
+  // edges.
   slideMessage:
-    "absolute inset-x-[var(--content-inset)] bottom-[var(--content-inset)] flex flex-col items-start text-left transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-15",
+    "absolute inset-x-[var(--content-inset)] bottom-[var(--content-inset)] flex flex-col items-start text-left",
   // The same, on a slide with a card in the bottom-right corner: from 1280px,
   // where the card sits beside the words, the right edge also clears the
   // card (280px) and a 40px gap, so a long headline wraps before reaching it.
   slideMessageBesideOverlay:
-    "absolute inset-x-[var(--content-inset)] bottom-[var(--content-inset)] flex flex-col items-start text-left transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-15 xl:right-[calc(var(--content-inset)+320px)]",
+    "absolute inset-x-[var(--content-inset)] bottom-[var(--content-inset)] flex flex-col items-start text-left xl:right-[calc(var(--content-inset)+320px)]",
   // In the bottom-right corner, the content inset in from both edges,
   // opposite the words. Narrower than 1280px the card has no room for both
   // side by side, so it moves to the top-left, and on a phone drops below
-  // the slider buttons in the top-right corner. It fades back while a
-  // marker is read, like the words.
+  // the slider buttons in the top-right corner.
   slideOverlay:
-    "absolute right-[var(--content-inset)] bottom-[var(--content-inset)] transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-15 max-xl:top-[var(--content-inset)] max-xl:right-auto max-xl:bottom-auto max-xl:left-[var(--content-inset)] max-sm:top-[68px]",
+    "absolute right-[var(--content-inset)] bottom-[var(--content-inset)] max-xl:top-[var(--content-inset)] max-xl:right-auto max-xl:bottom-auto max-xl:left-[var(--content-inset)] max-sm:top-[68px]",
   slideHeadline:
     "max-w-[min(17em,100%)] text-balance text-[clamp(1.75rem,1.2rem+1.6vw,2.75rem)] text-white tracking-[-0.01em] max-md:text-[22px] [@media(max-height:780px)]:text-[clamp(1.5rem,1.1rem+1.2vw,2.25rem)]",
   slideSubheadline:
     "mt-3 max-w-[480px] text-pretty font-sans text-[16px] text-white leading-6 max-md:mt-3 max-md:text-[14px] max-md:leading-5",
-  // Set as the readings in `StatSprite` are: if they change size, change this.
-  stripLabelText:
-    "m-0 whitespace-nowrap font-sans font-semibold text-[13.5px] text-primary-foreground leading-none max-sm:text-[12px]",
   navShown:
     "absolute top-[calc(var(--mask-t)+16px)] right-[calc(var(--mask-r)+16px)] z-20 flex gap-2 opacity-100 transition-opacity duration-500 motion-reduce:transition-none",
   navHidden:
     "pointer-events-none absolute top-[calc(var(--mask-t)+16px)] right-[calc(var(--mask-r)+16px)] z-20 flex gap-2 opacity-0 transition-opacity duration-300 motion-reduce:transition-none",
+  // A light brand blue, so the arrows stand out on the dark footage as well
+  // as on the photographs, deepening to a mid navy on hover.
   navButton:
-    "flex size-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-[background-color,opacity] hover:bg-black/45 disabled:opacity-35 disabled:hover:bg-black/30 max-sm:size-9",
+    "flex size-10 items-center justify-center rounded-full border border-white/20 bg-primary-400 text-white transition-[background-color,opacity] hover:bg-primary-700 disabled:opacity-35 disabled:hover:bg-primary-400 max-sm:size-9",
   navIcon: "size-5",
-  // The strip rises from below the frame as the footage shrinks, on the same
-  // progress, so the two arrive together. It answers the pointer only once
-  // it has landed.
-  stripArriving:
-    "pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[140px] opacity-[var(--p)] [translate:0_calc((1-var(--p))*100%)]",
-  // The label sits in the same frame as the track of bars in the strip,
-  // centred, capped at the page width and padded alike, so it stays left
-  // aligned with the first bar at any width. Just above the strip, which it
-  // names, and clear of the pins at full lift. It fades while a marker is
-  // read, because the readout can slide over it.
-  stripLabelRow:
-    "-translate-x-1/2 pointer-events-none absolute bottom-[88px] left-1/2 w-full max-w-page px-7 transition-opacity duration-300 group-has-[[role=slider][aria-valuetext]]/stage:opacity-0",
-  // The same frosted shell as the bar.
-  stripLabel:
-    "inline-flex items-center rounded-full border border-hero-glass-edge bg-hero-glass px-3.5 py-[7px] backdrop-blur-md max-sm:py-1.5",
-  stripLanded:
-    "absolute inset-x-0 bottom-0 z-20 h-[140px] opacity-[var(--p)] [translate:0_calc((1-var(--p))*100%)]",
 } as const;
 
 /**
@@ -277,9 +253,7 @@ export const CaseStudySection = ({
   subheadline,
   label,
   media,
-  caseStudy,
   slides = [],
-  stripLabel,
 }: CaseStudySectionProperties) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
@@ -381,12 +355,17 @@ export const CaseStudySection = ({
           onPointerUp={handlePointerUp}
           onWheel={handleWheel}
         >
+          <div className={classes.leadShadow} />
           <article
             aria-label={`1 of ${count}`}
             aria-roledescription="slide"
             className={classes.lead}
           >
-            <div className={classes.media}>{media}</div>
+            {/* Only the card being shown plays: moved aside, it still
+                overlaps the window, so being on screen is not enough. */}
+            <HeroMediaPausedContext.Provider value={index !== 0}>
+              <div className={classes.media}>{media}</div>
+            </HeroMediaPausedContext.Provider>
             <div
               className={
                 settled ? classes.leadMessageShown : classes.leadMessageHidden
@@ -436,20 +415,6 @@ export const CaseStudySection = ({
             </button>
           </div>
         ) : null}
-
-        <div
-          className={settled ? classes.stripLanded : classes.stripArriving}
-          inert={!settled}
-        >
-          {stripLabel ? (
-            <div className={classes.stripLabelRow}>
-              <div className={classes.stripLabel}>
-                <p className={classes.stripLabelText}>{stripLabel}</p>
-              </div>
-            </div>
-          ) : null}
-          <BiomarkerRange {...(caseStudy ? { caseStudy } : {})} />
-        </div>
       </section>
     </div>
   );

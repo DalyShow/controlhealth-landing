@@ -1,8 +1,9 @@
 "use client";
 
 import { useReplayInView } from "@/hooks/use-in-view";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { roundedRectPath, sparklePath } from "@/lib/path";
-import { type CSSProperties, useRef } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 type Bar = {
   x: number;
@@ -166,6 +167,245 @@ export const AiInputVisual = () => {
         pathLength={100}
         style={highlightStyle}
       />
+    </svg>
+  );
+};
+
+type AiPromptVisualProperties = {
+  /** What is typed into the field, e.g. "How can we help". */
+  prompt: string;
+  /** False holds it undrawn; true draws the field in and types the prompt. */
+  play: boolean;
+};
+
+/** How long the field takes to draw its outline before anything else. */
+const PROMPT_DRAW_MS = 1200;
+
+/** Milliseconds per character as the prompt types itself in. */
+const PROMPT_TYPE_MS = 60;
+
+/**
+ * The field on its own: the width of the one above but slimmer, and
+ * rounded fully at the ends, so it reads as a pill rather than a box.
+ */
+const PROMPT_FIELD = { x: -95, y: 16, width: 190, height: 34 } as const;
+const PROMPT_RADIUS = PROMPT_FIELD.height / 2;
+const PROMPT_MID = PROMPT_FIELD.y + PROMPT_RADIUS;
+
+const PROMPT_FIELD_PATH = roundedRectPath(
+  PROMPT_FIELD.x,
+  PROMPT_FIELD.y,
+  PROMPT_FIELD.width,
+  PROMPT_FIELD.height,
+  PROMPT_RADIUS
+);
+
+/** The send button, centred in the rounded end of the field. */
+const PROMPT_SEND = {
+  cx: PROMPT_FIELD.x + PROMPT_FIELD.width - PROMPT_RADIUS,
+  cy: PROMPT_MID,
+  r: 11,
+} as const;
+
+/** The prompt, set in from the rounded start of the field. */
+const PROMPT_X = -76;
+
+/** Space between the end of the prompt and the caret. */
+const CARET_GAP = 2;
+
+/** Width of the drawing box in its own units, for converting to pixels. */
+const PROMPT_VIEW_WIDTH = 256;
+
+/** The sparkles, gathered at the corner of the field now there is no reply. */
+const PROMPT_SPARKLES = [
+  { cx: -105, cy: 14, r: 4.5, delay: 0 },
+  { cx: -112, cy: 6, r: 2.5, delay: -1.3 },
+] as const;
+
+/**
+ * The AI input on its own, with no reply above it: its outline draws in,
+ * the prompt types itself into the field, and once it is written the lit
+ * segment starts running the border and the caret keeps blinking, waiting.
+ * The same field, send button and sparkles as `AiInputVisual`.
+ *
+ * Drawn large, so its strokes are held at a true pixel rather than scaling
+ * up with it: `--unit` is one screen pixel in the units of the drawing,
+ * measured from the size it renders at, and the outline and the lit segment
+ * are that wide.
+ */
+const promptClasses = {
+  root: "block h-auto w-full overflow-visible",
+  fieldDrawn:
+    "stroke-figure-line-bright [fill:url(#prompt-glass)] [fill-opacity:1] [stroke-dasharray:100] [stroke-dashoffset:0] [stroke-width:var(--unit,0.4)] transition-[stroke-dashoffset,fill-opacity] duration-[1200ms] ease-out motion-reduce:transition-none",
+  fieldHidden:
+    "stroke-figure-line-bright [fill:url(#prompt-glass)] [fill-opacity:0] [stroke-dasharray:100] [stroke-dashoffset:100] [stroke-width:var(--unit,0.4)]",
+  highlight:
+    "fill-none stroke-figure-accent [filter:drop-shadow(0_0_calc(var(--unit,0.4)*2)_var(--color-figure-accent))] [stroke-dasharray:17_83] [stroke-width:var(--unit,0.4)]",
+  sendShown:
+    "opacity-100 transition-opacity delay-[900ms] duration-500 motion-reduce:transition-none",
+  sendHidden: "opacity-0",
+  sparkle:
+    "fill-none stroke-figure-accent [stroke-width:var(--unit,0.4)] [transform-box:fill-box] [transform-origin:center]",
+  send: "stroke-figure-line-bright [fill:url(#prompt-glass)] [stroke-width:var(--unit,0.4)]",
+  prompt: "fill-primary-foreground font-sans [font-size:9px]",
+} as const;
+
+/** The prompt typed out a character at a time once the field has drawn. */
+const useTyped = (prompt: string, play: boolean, still: boolean) => {
+  const [typed, setTyped] = useState(0);
+
+  useEffect(() => {
+    if (still) {
+      setTyped(prompt.length);
+      return;
+    }
+
+    if (!play) {
+      setTyped(0);
+      return;
+    }
+
+    if (typed >= prompt.length) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => setTyped((count) => count + 1),
+      typed === 0 ? PROMPT_DRAW_MS : PROMPT_TYPE_MS
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [play, prompt.length, still, typed]);
+
+  return typed;
+};
+
+export const AiPromptVisual = ({ prompt, play }: AiPromptVisualProperties) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const textRef = useRef<SVGTextElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const shown = play || prefersReducedMotion;
+  const typed = useTyped(prompt, play, prefersReducedMotion);
+  const [caretX, setCaretX] = useState(PROMPT_X);
+  const written = typed >= prompt.length;
+
+  // One screen pixel, in the units of the drawing, kept current as it resizes.
+  useEffect(() => {
+    const svg = svgRef.current;
+
+    if (!svg) {
+      return;
+    }
+
+    const measure = () => {
+      const width = svg.getBoundingClientRect().width;
+
+      if (width > 0) {
+        svg.style.setProperty("--unit", `${PROMPT_VIEW_WIDTH / width}`);
+      }
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(svg);
+
+    return () => observer.disconnect();
+  }, []);
+
+  // The caret follows the end of what has been typed so far.
+  useEffect(() => {
+    const width =
+      typed > 0 ? (textRef.current?.getComputedTextLength() ?? 0) : 0;
+    setCaretX(PROMPT_X + width + (typed > 0 ? CARET_GAP : 0));
+  }, [typed]);
+
+  return (
+    <svg
+      aria-hidden="true"
+      className={promptClasses.root}
+      data-figure=""
+      fill="none"
+      ref={svgRef}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox={`-128 -8 ${PROMPT_VIEW_WIDTH} 66`}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="prompt-glass" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--color-figure-glass-far)" />
+          <stop offset="1" stopColor="var(--color-figure-glass-near)" />
+        </linearGradient>
+      </defs>
+
+      {shown
+        ? PROMPT_SPARKLES.map((sparkle) => (
+            <path
+              className={promptClasses.sparkle}
+              d={sparklePath(sparkle.cx, sparkle.cy, sparkle.r)}
+              key={sparkle.r}
+              style={{
+                animation: `figure-twinkle ${TWINKLE_S}s ease-in-out ${sparkle.delay}s infinite`,
+              }}
+            />
+          ))
+        : null}
+
+      <path
+        className={shown ? promptClasses.fieldDrawn : promptClasses.fieldHidden}
+        d={PROMPT_FIELD_PATH}
+        pathLength={100}
+      />
+
+      <text
+        className={promptClasses.prompt}
+        dominantBaseline="central"
+        ref={textRef}
+        x={PROMPT_X}
+        y={PROMPT_MID}
+      >
+        {prompt.slice(0, typed)}
+      </text>
+      {shown ? (
+        <rect
+          className={classes.caret}
+          height={12}
+          rx={0.8}
+          style={{
+            animation: written
+              ? "figure-caret 1.1s steps(1, end) infinite"
+              : "none",
+          }}
+          width={1.6}
+          x={caretX}
+          y={PROMPT_MID - 6}
+        />
+      ) : null}
+
+      <g className={shown ? promptClasses.sendShown : promptClasses.sendHidden}>
+        <circle
+          className={promptClasses.send}
+          cx={PROMPT_SEND.cx}
+          cy={PROMPT_SEND.cy}
+          r={PROMPT_SEND.r}
+        />
+        <path
+          className={classes.mark}
+          d={`M${PROMPT_SEND.cx} ${PROMPT_SEND.cy + 5.5}v-10M${
+            PROMPT_SEND.cx - 4.2
+          } ${PROMPT_SEND.cy - 0.8}l4.2-4.2 4.2 4.2`}
+        />
+      </g>
+
+      {written ? (
+        <path
+          className={promptClasses.highlight}
+          d={PROMPT_FIELD_PATH}
+          pathLength={100}
+          style={{ animation: "figure-trace 3.4s linear infinite" }}
+        />
+      ) : null}
     </svg>
   );
 };

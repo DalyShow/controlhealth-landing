@@ -13,6 +13,8 @@ import type { NavLink } from "@/components/marketing/molecules/nav-links";
 import { StatBar } from "@/components/marketing/molecules/stat-bar";
 import { StatSprite } from "@/components/marketing/molecules/stat-sprite";
 import type { TrustItem } from "@/components/marketing/molecules/trust-row";
+import { AiAssistantSection } from "@/components/marketing/organisms/ai-assistant-section";
+import { BiomarkerPanelSection } from "@/components/marketing/organisms/biomarker-panel-section";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
 import {
   CaseStudySection,
@@ -82,8 +84,39 @@ const ACTIVE_HERO: HeroVariant = "scan";
 /** Names the case study slider for assistive technology. */
 const CASE_STUDY_LABEL = "Sarah’s story";
 
-/** The label over the biomarker strip in the first case study. */
-const CASE_STUDY_STRIP_LABEL = "Sarah’s Personalized Panel";
+/** The AI section, after her panel: what she can ask of it. */
+const AI_SECTION = {
+  headline: "Her Health Keeps Changing. Her AI Keeps Up.",
+  body: "Connected to Sarah’s biometric trends, clinical history, and biomarker results, AI helps her understand what’s changing, ask better questions, and stay in step with her health over time.",
+  prompt: "How can we help",
+  questionsLabel: "Questions Sarah might ask",
+} as const;
+
+/** Questions a person might ask it, walled up behind the input. */
+const AI_QUESTIONS = [
+  "What has changed most in my health data over the past month?",
+  "How do my latest biomarker results help explain the changes in my heart rate and recovery?",
+  "Which of my results deserve the most attention right now?",
+  "Are my metrics moving back toward my personal baseline?",
+  "Do my recent trends suggest that my current plan is working?",
+  "How are my sleep, training, menstrual cycle, and symptoms affecting one another?",
+  "Does my current training load look appropriate for how my body is recovering?",
+  "Are there patterns I might be missing across my wearable and clinical data?",
+  "Which symptoms should I continue tracking - and how often?",
+  "What changes would be worth discussing with my healthcare professional?",
+  "Which biomarkers should I consider retesting, and when?",
+  "Are any of my results or trends potentially urgent?",
+  "What questions should I bring to my next medical appointment?",
+  "Can you summarize my progress since my last biomarker panel?",
+  "What would meaningful improvement look like for me over the next four weeks?",
+];
+
+/** The section after the case study: her panel, and what it showed. */
+const PANEL_SECTION = {
+  headline: "The Data Showed What. The Panel Showed Why.",
+  body: "Sarah’s wearable captured the change. Her personalized biomarker panel connected those signals to what was happening beneath the surface - turning scattered metrics into a clearer, more complete picture.",
+  label: "Sarah’s Personalized Panel",
+} as const;
 
 /**
  * Sarah's panel, from the case study. Only the results it states: serum iron,
@@ -469,12 +502,10 @@ const SHOW_HOW_IT_WORKS = false;
  */
 const CASE_STUDY = (
   <CaseStudySection
-    caseStudy={SARAH}
     headline={CASE_STUDY_MESSAGE.headline}
     label={CASE_STUDY_LABEL}
     media={<HeroMedia poster={HERO_MEDIA_POSTER} src={HERO_MEDIA_SRC} />}
     slides={CASE_STUDY_SLIDES}
-    stripLabel={CASE_STUDY_STRIP_LABEL}
     subheadline={CASE_STUDY_MESSAGE.subheadline}
   />
 );
@@ -494,6 +525,19 @@ const LandingPage = () => (
     />
     {HEROES[ACTIVE_HERO]}
     {CASE_STUDY}
+    <BiomarkerPanelSection
+      body={PANEL_SECTION.body}
+      caseStudy={SARAH}
+      headline={PANEL_SECTION.headline}
+      label={PANEL_SECTION.label}
+    />
+    <AiAssistantSection
+      body={AI_SECTION.body}
+      headline={AI_SECTION.headline}
+      prompt={AI_SECTION.prompt}
+      questions={AI_QUESTIONS}
+      questionsLabel={AI_SECTION.questionsLabel}
+    />
     {SHOW_HOW_IT_WORKS ? (
       <CalloutSection body={SECTION.body} headline={SECTION.headline}>
         {CALLOUTS.map((callout, index) => (

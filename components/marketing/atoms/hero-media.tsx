@@ -1,7 +1,14 @@
 "use client";
 
 import { useInView } from "@/hooks/use-in-view";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+
+/**
+ * Set by whatever holds the layer to pause the footage while it is on
+ * screen but not being looked at, such as a slide moved out of view that
+ * still overlaps the window. Off screen it pauses regardless.
+ */
+export const HeroMediaPausedContext = createContext(false);
 
 type HeroMediaProperties = {
   src: string;
@@ -102,8 +109,9 @@ const useWantsVideo = () => {
  * The still paints first and the footage fades in over it once the browser can
  * play it through, so a part-buffered frame never flashes over the gradient.
  * On a phone, and for anyone who has asked for less motion, the footage is
- * never fetched and the still is the hero. How far the layer fades up is the
- * caller's to set, because it depends on how busy what sits under the copy is.
+ * never fetched and the still is the hero. How far the layer fades up is
+ * for the caller to set, because it depends on how busy what sits under the
+ * copy is.
  */
 const classes = {
   root: "pointer-events-none absolute inset-0 overflow-hidden mix-blend-overlay transition-opacity duration-700 ease-out motion-reduce:transition-none",
@@ -129,6 +137,7 @@ export const HeroMedia = ({
   // arrive, which is right for a figure and wrong for video: it keeps a
   // decoder running for another 120px after the hero has gone.
   const inView = useInView(layerRef, HERO_MEDIA_ROOT_MARGIN);
+  const paused = useContext(HeroMediaPausedContext);
 
   const isNear = useInView(layerRef, HERO_MEDIA_ARM_MARGIN);
   const [isArmed, setIsArmed] = useState(false);
@@ -161,14 +170,14 @@ export const HeroMedia = ({
       return;
     }
 
-    if (inView) {
+    if (inView && !paused) {
       video.play().catch(() => {
         // Autoplay can be refused; the still or the gradient still stands.
       });
     } else {
       video.pause();
     }
-  }, [inView, video]);
+  }, [inView, paused, video]);
 
   // A cached video can reach its ready state before React attaches the
   // listeners, in which case the event never arrives. And on a slow connection

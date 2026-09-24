@@ -27,7 +27,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
  * ticks are short. What it gives back is headroom: the readout sits lower and
  * the hero's stat bar keeps the band above it.
  */
-const BAR_HEIGHT = 36;
+const BAR_HEIGHT = 52;
 
 /**
  * Bars per marker. Four gives a hover target of roughly fourteen pixels
@@ -118,6 +118,18 @@ const classes = {
   root: "absolute inset-x-0 bottom-0 h-[140px] touch-none drop-shadow-waveform focus-visible:outline-none",
   track:
     "-translate-x-1/2 absolute bottom-0 left-1/2 flex h-full w-full max-w-page items-end justify-between px-7",
+  // Hidden until the wave plays, when each bar rises in on its own delay.
+  trackWaiting:
+    "-translate-x-1/2 absolute bottom-0 left-1/2 flex h-full w-full max-w-page items-end justify-between px-7 opacity-0",
+  // Rises from below its own baseline into place. The keyframes set only the
+  // start, so each bar finishes on whatever its own opacity and lift are.
+  barWave: "animate-bar-rise motion-reduce:animate-none",
+  // Sinks back below its baseline as a parent raises `--exit` from 0 to 1:
+  // the wave run backwards, the rightmost bar first (its `--k` is 1) and the
+  // leftmost last. On `translate`, so it stacks with the lift on `transform`
+  // and with the entrance, and does nothing where no parent sets `--exit`.
+  barExit:
+    "[translate:0_calc(clamp(0,var(--exit,0)*1.6-(1-var(--k))*0.6,1)*110%)]",
   bar: "w-[4px] shrink-0 rounded-full opacity-[0.22] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[3px] motion-reduce:transition-none",
   barCovered:
     "w-[4px] shrink-0 rounded-full opacity-[0.82] transition-[opacity,transform] duration-[260ms,340ms] ease-arrive max-md:w-[3px] motion-reduce:transition-none",
@@ -126,9 +138,9 @@ const classes = {
 
   // Sits over the strip and slides along it to whichever marker is active.
   // Its bottom edge, the tip of the hairline, stops well clear of the bars
-  // at full lift (36 + 16 = 52px), so nothing in it ever touches them.
+  // at full lift (52 + 16 = 68px), so nothing in it ever touches them.
   readout:
-    "pointer-events-none absolute bottom-[104px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[88px] max-md:bottom-[88px] max-md:w-[330px]",
+    "pointer-events-none absolute bottom-[120px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
   // One of these, never both: gliding between markers, or fading in place
   // on arrival.
   readoutGlide:
@@ -139,13 +151,16 @@ const classes = {
   // one element leaves the winner to Tailwind's emit order, not to intent.
   readoutRest: "opacity-0",
   readoutOn: "opacity-100",
-  // A dark pane behind the words so they hold up over any photograph. The
+  // A dark pane behind the words so they hold up over any photograph, for
+  // when the strip sits over one (`readoutGlass`). Off by default. The
   // tint does most of the work: the readout fades in and out, and a browser
   // only blurs what is behind a fading element once the fade has finished,
   // so a pane that relied on the blur would visibly snap into focus. Fixed
   // width, so it does not resize as it glides from marker to marker.
   readoutPanel:
     "mx-auto w-[440px] rounded-2xl border border-hero-glass-edge bg-figure-ground/80 px-7 pt-5 pb-6 shadow-[0_18px_40px_-16px_rgb(0_0_0/0.6)] backdrop-blur-md max-md:w-full max-md:px-5 max-md:pt-4 max-md:pb-5",
+  // The same measure with no pane, over a plain ground.
+  readoutPanelPlain: "mx-auto w-[440px] max-md:w-full",
   system:
     "font-medium font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--tone)] max-md:text-[11px]",
   name: "mt-2 font-display text-[30px] text-primary-foreground leading-[1.15] max-md:text-[24px] [@media(max-height:780px)]:text-[26px]",
@@ -163,7 +178,10 @@ const classes = {
   // The pins share the track's box, so a bar's offset within the track is its
   // position here too. They cannot live inside the track: its children are
   // the bars, and bars are found by their index among them.
-  pins: "-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 h-full w-full max-w-page",
+  pins: "-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 h-full w-full max-w-page opacity-100 transition-opacity duration-500 motion-reduce:transition-none",
+  // Until the wave has passed, so the pins land on bars that are there.
+  pinsWaiting:
+    "-translate-x-1/2 pointer-events-none absolute bottom-0 left-1/2 h-full w-full max-w-page opacity-0",
   pinFinding:
     "absolute size-[9px] rounded-full bg-[var(--tone)] shadow-[0_0_10px_var(--tone)] transition-transform duration-[340ms] max-md:size-[7px] motion-reduce:transition-none",
   pinClear:
@@ -224,6 +242,10 @@ type CaseStudyPinsProperties = {
   activeIndex: number | null;
   /** Reduced motion: pins hold their place rather than riding up. */
   still: boolean;
+  /** False while the strip waits to wave in; the pins arrive after it. */
+  shown: boolean;
+  /** How long after being shown the pins fade in, in ms. */
+  showDelayMs: number;
 };
 
 /** A pin above each marker the case study covers: filled for a finding. */
@@ -232,6 +254,8 @@ const CaseStudyPins = ({
   pinX,
   activeIndex,
   still,
+  shown,
+  showDelayMs,
 }: CaseStudyPinsProperties) => {
   if (!caseStudy) {
     return null;
@@ -269,7 +293,11 @@ const CaseStudyPins = ({
   }
 
   return (
-    <div aria-hidden="true" className={classes.pins}>
+    <div
+      aria-hidden="true"
+      className={shown ? classes.pins : classes.pinsWaiting}
+      style={{ transitionDelay: shown ? `${showDelayMs}ms` : "0ms" }}
+    >
       {pins}
     </div>
   );
@@ -349,9 +377,28 @@ type BiomarkerRangeProperties = {
    * marker they were tested on, and their reading in its readout.
    */
   caseStudy?: CaseStudyResults;
+  /** Set the readout on a dark glass pane, for a strip laid over a photograph. */
+  readoutGlass?: boolean;
+  /**
+   * Leave out to show the strip at once. Pass false to hold it hidden, and
+   * true to play it in: the bars rise into place as a wave from the left,
+   * and the pins follow once it has passed.
+   */
+  waveIn?: boolean;
 };
 
-export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
+/**
+ * The wave: how long it takes to travel from the first bar to the last, and
+ * how long each bar takes to rise, which the `bar-rise` animation token sets.
+ */
+const WAVE_SPAN_MS = 1100;
+const BAR_RISE_MS = 700;
+
+export const BiomarkerRange = ({
+  caseStudy,
+  readoutGlass = false,
+  waveIn,
+}: BiomarkerRangeProperties) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const trackBoxRef = useRef<{ left: number; width: number } | null>(null);
   const activeIndexRef = useRef<number | null>(null);
@@ -614,7 +661,11 @@ export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
         className={`${classes.readout} ${isGliding ? classes.readoutGlide : classes.readoutJump} ${active ? classes.readoutOn : classes.readoutRest}`}
         style={readoutStyle}
       >
-        <div className={classes.readoutPanel}>
+        <div
+          className={
+            readoutGlass ? classes.readoutPanel : classes.readoutPanelPlain
+          }
+        >
           <ReadoutContent caseStudy={caseStudy} marker={active ?? null} />
         </div>
         <span className={classes.leader} />
@@ -638,7 +689,10 @@ export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
         role="slider"
         tabIndex={0}
       >
-        <div className={classes.track} ref={trackRef}>
+        <div
+          className={waveIn === false ? classes.trackWaiting : classes.track}
+          ref={trackRef}
+        >
           {bars.map((index) => {
             const marker = BIOMARKERS[Math.floor(index / barsPerMarker)];
 
@@ -657,14 +711,18 @@ export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
               transitionTimingFunction: "var(--ease-pin)",
               background: BIOMARKER_SYSTEMS[marker.system].tone,
               "--tone": BIOMARKER_SYSTEMS[marker.system].tone,
+              "--k": index / Math.max(barCount - 1, 1),
+              ...(waveIn
+                ? { animationDelay: `${(index * WAVE_SPAN_MS) / barCount}ms` }
+                : {}),
             } as CSSProperties;
 
             return (
               <div
-                className={barClass(
+                className={`${barClass(
                   marker.covered,
                   Math.floor(index / barsPerMarker) === activeIndex
-                )}
+                )} ${classes.barExit} ${waveIn ? classes.barWave : ""}`}
                 key={index}
                 style={style}
               />
@@ -676,6 +734,8 @@ export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
           activeIndex={activeIndex}
           caseStudy={caseStudy}
           pinX={pinX}
+          showDelayMs={waveIn ? WAVE_SPAN_MS + BAR_RISE_MS - 200 : 0}
+          shown={waveIn !== false}
           still={prefersReducedMotion}
         />
       </div>
