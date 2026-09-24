@@ -139,6 +139,13 @@ const classes = {
   // one element leaves the winner to Tailwind's emit order, not to intent.
   readoutRest: "opacity-0",
   readoutOn: "opacity-100",
+  // A dark pane behind the words so they hold up over any photograph. The
+  // tint does most of the work: the readout fades in and out, and a browser
+  // only blurs what is behind a fading element once the fade has finished,
+  // so a pane that relied on the blur would visibly snap into focus. Fixed
+  // width, so it does not resize as it glides from marker to marker.
+  readoutPanel:
+    "mx-auto w-[440px] rounded-2xl border border-hero-glass-edge bg-figure-ground/80 px-7 pt-5 pb-6 shadow-[0_18px_40px_-16px_rgb(0_0_0/0.6)] backdrop-blur-md max-md:w-full max-md:px-5 max-md:pt-4 max-md:pb-5",
   system:
     "font-medium font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--tone)] max-md:text-[11px]",
   name: "mt-2 font-display text-[30px] text-primary-foreground leading-[1.15] max-md:text-[24px] [@media(max-height:780px)]:text-[26px]",
@@ -607,7 +614,9 @@ export const BiomarkerRange = ({ caseStudy }: BiomarkerRangeProperties) => {
         className={`${classes.readout} ${isGliding ? classes.readoutGlide : classes.readoutJump} ${active ? classes.readoutOn : classes.readoutRest}`}
         style={readoutStyle}
       >
-        <ReadoutContent caseStudy={caseStudy} marker={active ?? null} />
+        <div className={classes.readoutPanel}>
+          <ReadoutContent caseStudy={caseStudy} marker={active ?? null} />
+        </div>
         <span className={classes.leader} />
       </div>
 
