@@ -97,15 +97,17 @@ const classes = {
   // The runway: 80vh of scroll past the panel, 60vh of it shrinking, so one
   // scroll gesture carries the footage into the card.
   section: "relative h-[calc(max(100dvh,680px)+80vh)] motion-reduce:h-auto",
-  // The card geometry. The mask insets are the settled card: 96px in from
-  // the top and at least as far from the bottom, with the next slide peeking
-  // in from the right. The card is capped at 960px tall: on a tall window it
-  // keeps its top where it is and the spare height opens up below, rather
-  // than stretching the card. 680px is the
-  // floor of the panel height, as in `panel`. The content inset is how far
-  // each slide keeps its words from the left and bottom edges of the card.
+  // The card geometry. The settled card is centred in the space beneath the
+  // fixed nav bar, with the same gap above and below it, and capped at
+  // 960px tall: on a tall window the spare height is shared out either side
+  // rather than stretching the card. On a short window the card gives way
+  // instead, keeping at least 32px (24px on a phone) clear of the bar and
+  // of the bottom edge. 680px is the floor of the panel height, as in
+  // `panel`. The next slide peeks in from the right. The content inset is
+  // how far each slide keeps its words from the left and bottom edges of
+  // the card.
   stage:
-    "@container panel sticky top-0 isolate overflow-hidden bg-figure-ground [--card-w:calc(100cqw-var(--mask-l)-var(--mask-r))] [--gap:16px] [--card-max:960px] [--mask-b:max(96px,calc(max(100dvh,680px)-var(--mask-t)-var(--card-max)))] [--mask-l:44px] [--mask-r:calc(var(--peek)+var(--gap))] [--mask-t:96px] [--content-inset:80px] [--p:0] [--peek:120px] [--radius:28px] max-sm:[--content-inset:24px] max-sm:[--gap:10px] max-sm:[--mask-l:16px] max-sm:[--mask-t:112px] max-sm:[--peek:28px] max-sm:[--radius:20px]",
+    "@container panel sticky top-0 isolate overflow-hidden bg-figure-ground [--card-w:calc(100cqw-var(--mask-l)-var(--mask-r))] [--gap:16px] [--card-max:960px] [--card-h:min(var(--card-max),calc(var(--stage-h)-var(--nav-bar-h)-2*var(--gap-min)))] [--gap-min:32px] [--mask-b:calc(var(--stage-h)-var(--mask-t)-var(--card-h))] [--mask-l:44px] [--mask-r:calc(var(--peek)+var(--gap))] [--mask-t:calc(var(--nav-bar-h)+(var(--stage-h)-var(--nav-bar-h)-var(--card-h))/2)] [--content-inset:80px] [--p:0] [--peek:120px] [--radius:28px] [--stage-h:max(100dvh,680px)] max-sm:[--content-inset:24px] max-sm:[--gap:10px] max-sm:[--mask-l:16px] max-sm:[--gap-min:24px] max-sm:[--peek:28px] max-sm:[--radius:20px]",
   track:
     "absolute inset-0 touch-pan-y select-none transition-[translate] duration-700 ease-arrive [translate:calc(var(--slide)*-1*(var(--card-w)+var(--gap)))_0] motion-reduce:transition-none",
   lead: "absolute inset-0 isolate bg-hero-gradient [clip-path:inset(calc(var(--p)*var(--mask-t))_calc(var(--p)*var(--mask-r))_calc(var(--p)*var(--mask-b))_calc(var(--p)*var(--mask-l))_round_calc(var(--p)*var(--radius)))]",

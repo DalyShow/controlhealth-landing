@@ -95,9 +95,9 @@ const PANELS = [
       height: 733,
     },
     paragraphs: [
-      'Control Health was launched with seed funding from Post Ventures, named after a close friend who suddenly passed away. "Give more than you take" was how he treated everyone around him, and is a core value at Post Ventures. He\'s a constant reminder that this is for the friends and family we all care about.',
-      "The team at Control Health each hit the same healthcare wall from a different direction. Brad spent years on a chronic Lyme journey through a system with no answers. Bryan came through a health scare that made understanding his own health urgent. James, after scaling and selling a company, landed in the cash-pay world and found he could actually get better care.",
-      "Different roads, same realization: the moment we all stopped waiting on an insurance company and took control of our own care, we got better. That's the whole idea behind Control Health.",
+      "Control Health launched with seed funding from Post Ventures, named after a close friend who suddenly passed away. \"Give more than you take\" was how he treated everyone, and it remains a core value at Post Ventures.",
+      "Our team each hit the same healthcare wall from a different direction. Brad spent years with chronic Lyme in a system with no answers. Bryan came through a health scare. James found better care in the cash-pay world.",
+      "Different roads, same realization: when we stopped waiting on insurance and took control of our care, we got better. That’s Control Health.",
     ],
   },
 ] satisfies {
@@ -160,8 +160,11 @@ const classes = {
   page: "relative w-full bg-figure-ground",
   // The feature rows run edge to edge, 120px apart and 120px above the
   // closing call to action, the rhythm of every section on the page. The
-  // section above brings its own 120px.
-  panels: "flex flex-col gap-[120px] pb-[120px] max-md:gap-16 max-md:pb-16",
+  // section above brings its own 120px. Side by side, every row is as tall
+  // as the tallest, so they all match. The copy of the later rows is kept
+  // short enough that the first row is the one that sets that height.
+  panels:
+    "grid grid-cols-1 gap-[120px] pb-[120px] md:auto-rows-fr max-md:gap-16 max-md:pb-16",
 } as const;
 
 export const metadata: Metadata = {

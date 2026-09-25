@@ -30,7 +30,8 @@ type StackedSlidesProperties = {
  * last has landed, the stack scrolls on with the page.
  *
  * It is all position: sticky, with no script. Each slide sticks one strip
- * lower than the last (`--i` strips down) and is one strip shorter, so every
+ * lower than the last (`--i` strips down, all of them beneath the fixed nav
+ * bar) and is one strip shorter, so every
  * slide ends at the bottom of the window once it has pinned: the first is
  * the full window tall, and the last fills exactly the space beneath the
  * strips. That shared bottom edge matters as the stack leaves. A pinned
@@ -45,7 +46,7 @@ type StackedSlidesProperties = {
 const classes = {
   root: "relative w-full [--strip:64px]",
   slide:
-    "sticky top-[calc(var(--i)*var(--strip))] h-[calc(100dvh-var(--i)*var(--strip))] min-h-[480px] w-full overflow-hidden bg-primary-950 shadow-[0_-8px_20px_-8px_rgb(0_0_0/0.45)]",
+    "sticky top-[calc(var(--nav-bar-h)+var(--i)*var(--strip))] h-[calc(100dvh-var(--nav-bar-h)-var(--i)*var(--strip))] min-h-[480px] w-full overflow-hidden bg-primary-950 shadow-[0_-8px_20px_-8px_rgb(0_0_0/0.45)]",
   image: "absolute inset-0 size-full object-cover",
   // Darkest behind the words in the middle, so they read over a bright
   // picture, and toward the top, under the pill.

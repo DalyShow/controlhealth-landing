@@ -13,6 +13,10 @@
   --primary: #15192a;
   --primary-foreground: #fafafa;
   --radius: 0.5rem;
+  /* The height of the fixed nav once it has condensed into its glass bar:
+     16px above and below a 40px button. Anything that pins to the top of
+     the window starts beneath it. */
+  --nav-bar-h: 72px;
 }
 
 @theme {
