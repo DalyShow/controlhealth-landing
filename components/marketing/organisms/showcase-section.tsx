@@ -1,11 +1,17 @@
 import { Heading } from "@/components/marketing/atoms/heading";
-import type { ProseImage } from "@/components/marketing/organisms/prose-section";
+
+type ShowcaseImage = {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+};
 
 type ShowcaseSectionProperties = {
   eyebrow?: string;
   headline: string;
   body: string;
-  image: ProseImage;
+  image: ShowcaseImage;
 };
 
 /**
