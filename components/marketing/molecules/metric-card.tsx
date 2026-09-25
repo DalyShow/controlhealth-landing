@@ -23,7 +23,7 @@ type MetricCardProperties = {
 const classes = {
   light:
     "flex w-[280px] flex-col rounded-2xl border border-hero-glass-edge bg-hero-glass p-4 backdrop-blur-md max-sm:w-[248px] max-sm:p-3.5 [&>*+*]:mt-4 [&>*+*]:border-hero-glass-rule [&>*+*]:border-t [&>*+*]:pt-4 max-xl:[&>*+*]:mt-3 max-xl:[&>*+*]:pt-3",
-  dark: "flex w-[280px] flex-col rounded-2xl border border-white/12 bg-figure-ground/70 p-4 shadow-[0_18px_40px_-16px_rgb(0_0_0/0.6)] backdrop-blur-md max-sm:w-[248px] max-sm:p-3.5 [&>*+*]:mt-4 [&>*+*]:border-white/10 [&>*+*]:border-t [&>*+*]:pt-4 max-xl:[&>*+*]:mt-3 max-xl:[&>*+*]:pt-3",
+  dark: "flex w-[280px] flex-col rounded-2xl border border-white/12 bg-figure-ground/70 p-4 backdrop-blur-md max-sm:w-[248px] max-sm:p-3.5 [&>*+*]:mt-4 [&>*+*]:border-white/10 [&>*+*]:border-t [&>*+*]:pt-4 max-xl:[&>*+*]:mt-3 max-xl:[&>*+*]:pt-3",
 } as const;
 
 export const MetricCard = ({

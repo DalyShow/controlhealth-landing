@@ -1,10 +1,11 @@
 "use client";
 
+import { BrandMarkIcon } from "@/components/marketing/atoms/brand-mark-icon";
 import { MetricLabel } from "@/components/marketing/atoms/metric-label";
 import { SPRITE_ICON_STROKE_WIDTH } from "@/components/marketing/icon-stroke";
 import { useInView } from "@/hooks/use-in-view";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { ArrowUp, Sparkles } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type AiExchangeProperties = {
@@ -51,7 +52,7 @@ const classes = {
   sendSent:
     "flex size-6 shrink-0 items-center justify-center rounded-full border border-transparent bg-[var(--tone,var(--color-teal-300))] text-primary-950 transition-colors duration-300",
   sendIcon: "size-3.5",
-  sparkle: "text-[var(--tone,var(--color-teal-300))]",
+  mark: "block size-full text-[var(--tone,var(--color-teal-300))]",
   answer:
     "m-0 text-left font-sans text-[13px] text-primary-foreground/80 leading-[1.5]",
   wordShown: "opacity-100 transition-opacity duration-300",
@@ -115,7 +116,7 @@ export const AiExchange = ({
   question,
   answer,
   questionLabel = "Your question",
-  answerLabel = "AI answer",
+  answerLabel = "Control Health",
 }: AiExchangeProperties) => {
   const halfRef = useRef<HTMLDivElement>(null);
   const inView = useInView(halfRef, "0px");
@@ -158,12 +159,7 @@ export const AiExchange = ({
 
       <div className={classes.half}>
         <MetricLabel
-          icon={
-            <Sparkles
-              className={classes.sparkle}
-              strokeWidth={SPRITE_ICON_STROKE_WIDTH}
-            />
-          }
+          icon={<BrandMarkIcon className={classes.mark} />}
           label={answerHeading}
         />
         <p className={classes.answer}>
