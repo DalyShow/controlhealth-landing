@@ -8,10 +8,13 @@ import {
   type SocialLink,
 } from "@/components/marketing/organisms/landing-footer";
 import { LandingNav } from "@/components/marketing/organisms/landing-nav";
+import {
+  FeatureSplit,
+  type FeatureSplitImage,
+} from "@/components/marketing/organisms/feature-split";
 import { PageHero } from "@/components/marketing/organisms/page-hero";
-import type { ProseBlock } from "@/components/marketing/organisms/prose-section";
+import { ScrollMask } from "@/components/marketing/organisms/scroll-mask";
 import { ShowcaseSection } from "@/components/marketing/organisms/showcase-section";
-import { StickyScrollSection } from "@/components/marketing/organisms/sticky-scroll-section";
 import { assetPath } from "@/lib/asset-path";
 import type { Metadata } from "next";
 
@@ -51,7 +54,7 @@ const PLATFORM = {
 } as const;
 
 /**
- * The panels the page pins and steps through. Copy is from the live page,
+ * The feature rows, alternating sides down the page. Copy is from the live page,
  * with two missing spaces in the middle paragraph repaired.
  */
 const PANELS = [
@@ -79,6 +82,8 @@ const PANELS = [
       alt: "A woman outdoors with her eyes closed, face turned to the sun",
       width: 1100,
       height: 1355,
+      // Her face is near the top of the portrait, above the centre crop.
+      focus: "50% 12%",
     },
   },
   {
@@ -95,7 +100,11 @@ const PANELS = [
       "Different roads, same realization: the moment we all stopped waiting on an insurance company and took control of our own care, we got better. That's the whole idea behind Control Health.",
     ],
   },
-] satisfies ProseBlock[];
+] satisfies {
+  heading: string;
+  paragraphs: string[];
+  image: FeatureSplitImage;
+}[];
 
 const CLOSE = {
   eyebrow: "Get started",
@@ -149,6 +158,10 @@ const SOCIALS = [
 
 const classes = {
   page: "relative w-full bg-figure-ground",
+  // The feature rows run edge to edge, 120px apart and 120px above the
+  // closing call to action, the rhythm of every section on the page. The
+  // section above brings its own 120px.
+  panels: "flex flex-col gap-[120px] pb-[120px] max-md:gap-16 max-md:pb-16",
 } as const;
 
 export const metadata: Metadata = {
@@ -165,25 +178,37 @@ const AboutPage = () => (
       logoHref={assetPath("/")}
       logoLabel="Control Health, back to home"
     />
-    <PageHero
-      eyebrow={HERO.eyebrow}
-      headline={HERO.headline}
-      lede={HERO.lede}
-      media={
-        <HeroMedia
-          opacity={HERO_MEDIA_OPACITY}
-          poster={assetPath(HERO_MEDIA_POSTER)}
-          src={assetPath(HERO_MEDIA_SRC)}
-        />
-      }
-    />
+    <ScrollMask>
+      <PageHero
+        eyebrow={HERO.eyebrow}
+        headline={HERO.headline}
+        lede={HERO.lede}
+        media={
+          <HeroMedia
+            opacity={HERO_MEDIA_OPACITY}
+            poster={assetPath(HERO_MEDIA_POSTER)}
+            src={assetPath(HERO_MEDIA_SRC)}
+          />
+        }
+      />
+    </ScrollMask>
     <ShowcaseSection
       body={PLATFORM.body}
       eyebrow={PLATFORM.eyebrow}
       headline={PLATFORM.headline}
       image={PLATFORM.image}
     />
-    <StickyScrollSection panels={PANELS} />
+    <div className={classes.panels}>
+      {PANELS.map((panel, index) => (
+        <FeatureSplit
+          flipped={index % 2 === 1}
+          headline={panel.heading}
+          image={panel.image}
+          key={panel.heading}
+          paragraphs={panel.paragraphs}
+        />
+      ))}
+    </div>
     <LandingCta
       ctaHref={CLOSE.ctaHref}
       ctaLabel={CLOSE.ctaLabel}

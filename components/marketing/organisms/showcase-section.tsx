@@ -16,7 +16,7 @@ type ShowcaseSectionProperties = {
  * in it would be legible.
  */
 const classes = {
-  section: "w-full bg-figure-ground py-24 max-md:py-16",
+  section: "w-full bg-figure-ground py-[120px] max-md:py-16",
   shell:
     "mx-auto flex w-full max-w-page flex-col gap-16 px-24 max-xl:px-10 max-md:gap-12 max-sm:px-6",
   grid: "grid grid-cols-12 gap-x-6",

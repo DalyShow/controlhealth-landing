@@ -19,8 +19,10 @@ type PageHeroProperties = {
  * LandingHero rather than four more flags on it.
  */
 const classes = {
+  // On a phone the words sit 48px in, so they keep clear of the edges when
+  // the hero is masked down to a card 24px in from the window.
   section:
-    "relative isolate flex min-h-[max(100dvh,660px)] w-full items-center justify-center overflow-hidden bg-hero-gradient px-6",
+    "relative isolate flex min-h-[max(100dvh,660px)] w-full items-center justify-center overflow-hidden bg-hero-gradient px-6 max-sm:px-12",
   copy: "relative flex max-w-[52rem] flex-col items-center gap-6 text-center",
   eyebrow:
     "font-medium font-mono text-[11px] text-spectrum-peach uppercase tracking-[0.18em]",
