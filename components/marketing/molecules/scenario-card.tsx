@@ -22,9 +22,12 @@ type ScenarioCardProperties = {
 const classes = {
   // Tall and narrow, so a row shows several and the next peeks in. Its own
   // stacking context, so the layers inside it stay inside it.
-  root: "group relative isolate h-[480px] w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl bg-primary-950 outline-2 outline-transparent outline-offset-[3px] transition-[outline-color] duration-300 max-sm:h-[440px] max-sm:w-[78vw]",
+  // Every tile but the picked one sits back, faded, and comes up to full
+  // on hover or keyboard focus, so the eye rests on the one whose markers
+  // are on the strip and the rest still answer the pointer.
+  root: "group relative isolate h-[480px] w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl bg-primary-950 opacity-40 outline-2 outline-transparent outline-offset-[3px] transition-[outline-color,opacity] duration-500 ease-out focus-within:opacity-100 hover:opacity-100 motion-reduce:transition-none max-sm:h-[440px] max-sm:w-[78vw]",
   rootSelected:
-    "group relative isolate h-[480px] w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl bg-primary-950 outline-2 outline-teal-300 outline-offset-[3px] transition-[outline-color] duration-300 max-sm:h-[440px] max-sm:w-[78vw]",
+    "group relative isolate h-[480px] w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl bg-primary-950 opacity-100 outline-2 outline-teal-300 outline-offset-[3px] transition-[outline-color,opacity] duration-500 ease-out motion-reduce:transition-none max-sm:h-[440px] max-sm:w-[78vw]",
   image:
     "absolute inset-0 size-full object-cover transition-transform duration-700 ease-arrive group-hover:scale-[1.03] motion-reduce:transition-none",
   // Over the blur, at the foot of the tile.
