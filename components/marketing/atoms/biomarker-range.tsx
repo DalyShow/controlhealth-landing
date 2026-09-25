@@ -5,6 +5,7 @@ import {
   BIOMARKER_COUNT,
   BIOMARKER_SYSTEMS,
   BIOMARKERS,
+  type BiomarkerName,
   type BiomarkerResult,
   type CaseStudyResults,
 } from "@/lib/biomarkers";
@@ -141,6 +142,11 @@ const classes = {
   // at full lift (52 + 16 = 68px), so nothing in it ever touches them.
   readout:
     "pointer-events-none absolute bottom-[120px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
+  // The same, taking the pointer, for a readout that carries an action while
+  // it is showing: the pointer can travel up the leader into it, and it
+  // stays open until the pointer leaves it.
+  readoutLive:
+    "pointer-events-auto absolute bottom-[120px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
   // One of these, never both: gliding between markers, or fading in place
   // on arrival.
   readoutGlide:
@@ -169,6 +175,7 @@ const classes = {
   note: "mx-auto mt-2 max-w-[380px] text-pretty font-sans text-[16px] text-figure-body leading-[1.5] max-md:text-[14px] [@media(max-height:780px)]:text-[15px]",
   tagRow:
     "mt-3.5 flex flex-wrap items-center justify-center gap-2 [@media(max-height:780px)]:mt-3",
+  actionRow: "mt-4 flex justify-center",
   // A person's reading, on the markers the case study covers. A finding is
   // filled with its system's tone; a clear result is only outlined.
   resultFinding:
@@ -345,6 +352,7 @@ const describeMarker = (
 type ReadoutContentProperties = {
   marker: Marker | null;
   caseStudy: CaseStudyResults | undefined;
+  action: ReadoutAction | undefined;
 };
 
 /**
@@ -353,7 +361,11 @@ type ReadoutContentProperties = {
  * Every other marker has only its note, and no row where the reading would
  * go.
  */
-const ReadoutContent = ({ marker, caseStudy }: ReadoutContentProperties) => {
+const ReadoutContent = ({
+  marker,
+  caseStudy,
+  action,
+}: ReadoutContentProperties) => {
   const system = marker ? BIOMARKER_SYSTEMS[marker.system] : null;
   const result = marker ? caseStudy?.results[marker.name] : undefined;
 
@@ -367,8 +379,23 @@ const ReadoutContent = ({ marker, caseStudy }: ReadoutContentProperties) => {
           <ResultTag person={caseStudy?.person} result={result} />
         </p>
       ) : null}
+      {marker && action ? (
+        <div className={classes.actionRow}>{action.render(marker.name)}</div>
+      ) : null}
     </>
   );
+};
+
+/**
+ * Something to do with the marker being read, offered in its readout, such
+ * as adding it to a panel. The readout is hidden from assistive technology,
+ * since the slider already speaks for it, so whatever `render` returns is
+ * for the pointer and should stay out of the tab order; `onActivate` is the
+ * same action from the keyboard, on Enter or Space with the strip focused.
+ */
+export type ReadoutAction = {
+  render: (name: BiomarkerName) => ReactNode;
+  onActivate: (name: BiomarkerName) => void;
 };
 
 type BiomarkerRangeProperties = {
@@ -379,6 +406,8 @@ type BiomarkerRangeProperties = {
   caseStudy?: CaseStudyResults;
   /** Set the readout on a dark glass pane, for a strip laid over a photograph. */
   readoutGlass?: boolean;
+  /** An action offered in the readout, which then takes the pointer. */
+  readoutAction?: ReadoutAction;
   /**
    * Leave out to show the strip at once. Pass false to hold it hidden, and
    * true to play it in: the bars rise into place as a wave from the left,
@@ -397,9 +426,12 @@ const BAR_RISE_MS = 700;
 export const BiomarkerRange = ({
   caseStudy,
   readoutGlass = false,
+  readoutAction,
   waveIn,
 }: BiomarkerRangeProperties) => {
   const trackRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const readoutRef = useRef<HTMLDivElement>(null);
   const trackBoxRef = useRef<{ left: number; width: number } | null>(null);
   const activeIndexRef = useRef<number | null>(null);
   const draggingRef = useRef(false);
@@ -610,10 +642,33 @@ export const BiomarkerRange = ({
     }
   };
 
-  const handlePointerLeave = () => {
+  // Leaving the strip for a readout that carries an action keeps the marker
+  // up, so the action can be reached; leaving the readout for anywhere but
+  // the strip puts it away.
+  const handlePointerLeave = (event: PointerEvent<HTMLDivElement>) => {
+    const into = event.relatedTarget;
+
+    if (
+      readoutAction &&
+      into instanceof Node &&
+      readoutRef.current?.contains(into)
+    ) {
+      return;
+    }
+
     if (!draggingRef.current) {
       clear();
     }
+  };
+
+  const handleReadoutLeave = (event: PointerEvent<HTMLDivElement>) => {
+    const into = event.relatedTarget;
+
+    if (into instanceof Node && rootRef.current?.contains(into)) {
+      return;
+    }
+
+    clear();
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -628,6 +683,16 @@ export const BiomarkerRange = ({
     };
 
     const next = moves[event.key];
+    const marker =
+      activeIndexRef.current === null
+        ? undefined
+        : BIOMARKERS[activeIndexRef.current];
+
+    if (readoutAction && marker && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      readoutAction.onActivate(marker.name);
+      return;
+    }
 
     if (next === undefined) {
       if (event.key === "Escape") {
@@ -658,7 +723,9 @@ export const BiomarkerRange = ({
     <>
       <div
         aria-hidden="true"
-        className={`${classes.readout} ${isGliding ? classes.readoutGlide : classes.readoutJump} ${active ? classes.readoutOn : classes.readoutRest}`}
+        className={`${readoutAction && active ? classes.readoutLive : classes.readout} ${isGliding ? classes.readoutGlide : classes.readoutJump} ${active ? classes.readoutOn : classes.readoutRest}`}
+        {...(readoutAction ? { onPointerLeave: handleReadoutLeave } : {})}
+        ref={readoutRef}
         style={readoutStyle}
       >
         <div
@@ -666,7 +733,11 @@ export const BiomarkerRange = ({
             readoutGlass ? classes.readoutPanel : classes.readoutPanelPlain
           }
         >
-          <ReadoutContent caseStudy={caseStudy} marker={active ?? null} />
+          <ReadoutContent
+            action={readoutAction}
+            caseStudy={caseStudy}
+            marker={active ?? null}
+          />
         </div>
         <span className={classes.leader} />
       </div>
@@ -686,6 +757,7 @@ export const BiomarkerRange = ({
         onPointerLeave={handlePointerLeave}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        ref={rootRef}
         role="slider"
         tabIndex={0}
       >

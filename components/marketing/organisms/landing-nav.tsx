@@ -15,15 +15,19 @@ type LandingNavProperties = {
   logoHref: string;
   /** Read in place of the logo, which is an image with no text of its own. */
   logoLabel: string;
-  links: NavLink[];
+  /** Centred links. Left out, the middle of the bar stays clear. */
+  links?: NavLink[];
+  /** A quieter link set just left of the call to action, as plain text. */
+  textLink?: NavLink;
   ctaLabel: string;
   ctaHref?: string;
 };
 
 /**
- * Landing page header: logo left, links centred, call to action right. It
- * is fixed to the top of the window and overlays the hero rather than
- * sitting above it, so the hero copy stays centred in the viewport.
+ * Landing page header: logo left, any links centred, and on the right the
+ * call to action, with a plain text link beside it. It is fixed to the top
+ * of the window and overlays the hero rather than sitting above it, so the
+ * hero copy stays centred in the viewport.
  *
  * At the top of the page it is clear, with room above it. Once the page has
  * scrolled it condenses into a bar of dark glass, blurring whatever passes
@@ -45,6 +49,12 @@ const classes = {
   // the hit area and an equal negative margin keeps the layout where it was.
   home: "-my-2 inline-flex items-center rounded-sm py-2 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-figure-accent focus-visible:outline-offset-4",
   links: "-translate-x-1/2 absolute left-1/2 max-md:hidden",
+  actions: "flex items-center gap-6 max-sm:gap-4",
+  // Plain text at the size of the call to action beside it, with no box
+  // around it. A phone keeps only the call to action, as there is no room
+  // for both beside the logo.
+  textLink:
+    "rounded-sm font-medium font-sans text-[14px] text-white transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-figure-accent focus-visible:outline-offset-4 max-sm:hidden",
   cta: "gap-2 border-glint",
 } as const;
 
@@ -53,34 +63,45 @@ export const LandingNav = ({
   logoHref,
   logoLabel,
   links,
+  textLink,
   ctaLabel,
   ctaHref,
 }: LandingNavProperties) => {
   const scrolled = useScrolled();
 
   return (
-  <header className={scrolled ? classes.headerScrolled : classes.headerAtTop}>
-    <a aria-label={logoLabel} className={classes.home} href={logoHref}>
-      {logo}
-    </a>
+    <header className={scrolled ? classes.headerScrolled : classes.headerAtTop}>
+      <a aria-label={logoLabel} className={classes.home} href={logoHref}>
+        {logo}
+      </a>
 
-    <div className={classes.links}>
-      <NavLinks links={links} />
-    </div>
+      {links && links.length > 0 ? (
+        <div className={classes.links}>
+          <NavLinks links={links} />
+        </div>
+      ) : null}
 
-    {ctaHref ? (
-      <Button asChild className={classes.cta} size="lg">
-        <a href={ctaHref}>
-          {ctaLabel}
-          <ChevronRight />
-        </a>
-      </Button>
-    ) : (
-      <Button className={classes.cta} size="lg" type="button">
-        {ctaLabel}
-        <ChevronRight />
-      </Button>
-    )}
-  </header>
-);
+      <div className={classes.actions}>
+        {textLink ? (
+          <a className={classes.textLink} href={textLink.href}>
+            {textLink.label}
+          </a>
+        ) : null}
+
+        {ctaHref ? (
+          <Button asChild className={classes.cta} size="lg">
+            <a href={ctaHref}>
+              {ctaLabel}
+              <ChevronRight />
+            </a>
+          </Button>
+        ) : (
+          <Button className={classes.cta} size="lg" type="button">
+            {ctaLabel}
+            <ChevronRight />
+          </Button>
+        )}
+      </div>
+    </header>
+  );
 };

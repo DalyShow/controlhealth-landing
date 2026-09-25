@@ -16,6 +16,7 @@ import type { TrustItem } from "@/components/marketing/molecules/trust-row";
 import { AiAssistantSection } from "@/components/marketing/organisms/ai-assistant-section";
 import { BiomarkerPanelSection } from "@/components/marketing/organisms/biomarker-panel-section";
 import { CalloutSection } from "@/components/marketing/organisms/callout-section";
+import { CaseStudyWall } from "@/components/marketing/organisms/case-study-wall";
 import {
   CaseStudySection,
   type CaseStudySlide,
@@ -43,6 +44,7 @@ import { SleepReading } from "@/components/marketing/organisms/sleep-reading";
 import { TrendReading } from "@/components/marketing/organisms/trend-reading";
 import type { CaseStudyResults } from "@/lib/biomarkers";
 import { assetPath } from "@/lib/asset-path";
+import { CASE_STUDY_SCENARIOS } from "@/lib/case-study-scenarios";
 import {
   Activity,
   BatteryFull,
@@ -339,16 +341,13 @@ const TRUST = [
   { icon: Activity, label: "60k+ providers" },
 ] satisfies TrustItem[];
 
-/**
- * Primary navigation. Targets are placeholders until the sections exist.
- */
-const NAV_LINKS = [
-  { label: "About us", href: assetPath("/about") },
-  { label: "Pricing", href: assetPath("/pricing") },
-  { label: "How it works", href: assetPath("/how-it-works") },
-] satisfies NavLink[];
+/** Beside the call to action in the nav, as plain text. */
+const NAV_TEXT_LINK = {
+  label: "View Pricing",
+  href: assetPath("/pricing"),
+} satisfies NavLink;
 
-const NAV_CTA_LABEL = "Join the waitlist";
+const NAV_CTA_LABEL = "Build your Panel";
 
 /** Milliseconds per footfall — a slow, readable walking pace. */
 const STEP_BEAT_MS = 900;
@@ -510,6 +509,43 @@ const CASE_STUDY = (
   />
 );
 
+/**
+ * What follows the hero: Sarah, the single case study that scales down into
+ * its slider, with her biomarker panel after it, or the wall of eighteen
+ * scenarios over the strip in their place. Both stay built; this line picks
+ * which one the page shows, while the wall is tried in context.
+ */
+type StoryVariant = "sarah" | "wall";
+
+const WALL = {
+  headline: "Your Health Isn’t Standard. Neither Is Your Panel.",
+  subheadline:
+    "Your symptoms, health history, wearable trends, and goals shape a biomarker panel built around the questions your body is raising.",
+} as const;
+
+const ACTIVE_STORY: StoryVariant = "wall";
+
+const STORIES = {
+  sarah: (
+    <>
+      {CASE_STUDY}
+      <BiomarkerPanelSection
+        body={PANEL_SECTION.body}
+        caseStudy={SARAH}
+        headline={PANEL_SECTION.headline}
+        label={PANEL_SECTION.label}
+      />
+    </>
+  ),
+  wall: (
+    <CaseStudyWall
+      headline={WALL.headline}
+      scenarios={CASE_STUDY_SCENARIOS}
+      subheadline={WALL.subheadline}
+    />
+  ),
+} satisfies Record<StoryVariant, ReactNode>;
+
 const classes = {
   page: "relative w-full",
 } as const;
@@ -518,19 +554,13 @@ const LandingPage = () => (
   <main className={classes.page}>
     <LandingNav
       ctaLabel={NAV_CTA_LABEL}
-      links={NAV_LINKS}
       logo={<BrandLockup src={LOCKUP_SRC} />}
       logoHref={assetPath("/")}
       logoLabel="Control Health, back to home"
+      textLink={NAV_TEXT_LINK}
     />
     {HEROES[ACTIVE_HERO]}
-    {CASE_STUDY}
-    <BiomarkerPanelSection
-      body={PANEL_SECTION.body}
-      caseStudy={SARAH}
-      headline={PANEL_SECTION.headline}
-      label={PANEL_SECTION.label}
-    />
+    {STORIES[ACTIVE_STORY]}
     <AiAssistantSection
       body={AI_SECTION.body}
       headline={AI_SECTION.headline}

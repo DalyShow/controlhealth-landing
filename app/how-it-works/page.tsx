@@ -21,14 +21,13 @@ import { StepsReading } from "@/components/marketing/organisms/steps-reading";
 import { assetPath } from "@/lib/asset-path";
 import type { Metadata } from "next";
 
-/** Primary navigation. */
-const NAV_LINKS = [
-  { label: "About us", href: assetPath("/about") },
-  { label: "Pricing", href: assetPath("/pricing") },
-  { label: "How it works", href: assetPath("/how-it-works") },
-] satisfies NavLink[];
+/** Beside the call to action in the nav, as plain text. */
+const NAV_TEXT_LINK = {
+  label: "View Pricing",
+  href: assetPath("/pricing"),
+} satisfies NavLink;
 
-const NAV_CTA_LABEL = "Join the waitlist";
+const NAV_CTA_LABEL = "Build your Panel";
 const LOCKUP_SRC = "/assets/lockup-light.svg";
 const WORDMARK_SRC = "/assets/wordmark-light.svg";
 
@@ -185,10 +184,10 @@ const HowItWorksPage = () => (
   <main className={classes.page}>
     <LandingNav
       ctaLabel={NAV_CTA_LABEL}
-      links={NAV_LINKS}
       logo={<BrandLockup src={assetPath(LOCKUP_SRC)} />}
       logoHref={assetPath("/")}
       logoLabel="Control Health, back to home"
+      textLink={NAV_TEXT_LINK}
     />
     <IntroHero body={HERO.body} headline={HERO.headline} />
     <StackedSlides slides={SLIDES} />
