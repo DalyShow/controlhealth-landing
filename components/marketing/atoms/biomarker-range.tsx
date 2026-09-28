@@ -123,8 +123,11 @@ const classes = {
   // A strip pinned to the bottom edge of the window is a hard thing to land
   // on and an easy thing to fall off, so the region that answers the pointer
   // reaches well above the ink. The bars stay bottom aligned inside it and
-  // nothing above them is drawn.
-  root: "absolute inset-x-0 bottom-0 h-[140px] touch-none drop-shadow-waveform focus-visible:outline-none",
+  // nothing above them is drawn. A finger dragging along it is scrubbing,
+  // not selecting: iOS Safari otherwise reads a press and drag as the start
+  // of a text selection, or a long press as a call for its callout, and
+  // cancels the touch to do so, which ends the scrub.
+  root: "absolute inset-x-0 bottom-0 h-[140px] touch-none select-none drop-shadow-waveform [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] focus-visible:outline-none",
   track:
     "-translate-x-1/2 absolute bottom-0 left-1/2 flex h-full w-full max-w-page items-end justify-between px-7",
   // Hidden until the wave plays, when each bar rises in on its own delay.
@@ -149,12 +152,12 @@ const classes = {
   // Its bottom edge, the tip of the hairline, stops well clear of the bars
   // at full lift (52 + 16 = 68px), so nothing in it ever touches them.
   readout:
-    "pointer-events-none absolute bottom-[120px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
+    "pointer-events-none select-none absolute bottom-[120px] [-webkit-touch-callout:none] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
   // The same, taking the pointer, for a readout that carries an action while
   // it is showing: the pointer can travel up the leader into it, and it
   // stays open until the pointer leaves it.
   readoutLive:
-    "pointer-events-auto absolute bottom-[120px] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
+    "pointer-events-auto select-none absolute bottom-[120px] [-webkit-touch-callout:none] left-0 w-[560px] text-center [@media(max-height:780px)]:bottom-[104px] max-md:bottom-[104px] max-md:w-[330px]",
   // One of these, never both: gliding between markers, or fading in place
   // on arrival.
   readoutGlide:

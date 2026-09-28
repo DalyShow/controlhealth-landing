@@ -140,7 +140,10 @@ const classes = {
   // The strip, close beneath the row. Above the row, so the readout of a
   // marker, which rises up over the tiles, always sits on top of them. The
   // height is the room the pins need over the bars.
-  strip: "relative z-20 mt-10 h-[140px] max-md:mt-8",
+  // Nothing in it can be selected, so a drag along the strip on a phone
+  // never spills into a text selection around it.
+  strip:
+    "relative z-20 mt-10 h-[140px] select-none [-webkit-touch-callout:none] max-md:mt-8",
   // In the readout: light, as the site’s other calls to action are, until
   // the marker is in the panel, then outlined in teal with a tick.
   add: "rounded-full bg-primary-50 text-primary-950 hover:bg-primary-100",
@@ -151,7 +154,7 @@ const classes = {
   // how many of the forty they are, and how to read one. Wider, the pins
   // over the full strip say the same.
   focusCaption:
-    "mt-4 px-[var(--gutter)] text-center font-sans text-[13px] text-white/60 leading-[1.4] md:hidden",
+    "mt-4 select-none px-[var(--gutter)] text-center font-sans text-[13px] text-white/60 leading-[1.4] md:hidden",
 } as const;
 
 /** Whether the row can scroll further back and further on. */
