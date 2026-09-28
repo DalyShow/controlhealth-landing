@@ -329,10 +329,17 @@
 /* A full-screen panel: full width and exactly one viewport tall. The floor
    stops a very short window collapsing a panel's absolutely placed content
    onto itself; anything that positions against a panel's height should use
-   the same 680px. */
+   the same 680px.
+
+   Tall as the small viewport, the window with a phone browser's toolbars
+   showing, rather than the dynamic one. On a phone the toolbars slide away
+   as the page starts to scroll, and a panel sized to the dynamic viewport
+   grew with them, taking everything placed by its height along with it: the
+   hero's figure scaled up and its scan field re-laid its grid mid-scroll.
+   On a desktop, where nothing slides away, the two are the same height. */
 @utility panel {
   width: 100%;
-  height: max(100dvh, 680px);
+  height: max(100svh, 680px);
 }
 
 /* Solid at the floor, dissolving upward into the ground. For a field that

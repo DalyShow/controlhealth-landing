@@ -32,7 +32,7 @@ const classes = {
   anchor: "relative",
   // The band runs from the bottom of the message group down to the top of the
   // marker strip, which stands 24px off the section's bottom edge — see the
-  // BiomarkerRange atom. `max(50dvh,340px)` is half the panel's height, the
+  // BiomarkerRange atom. `max(50svh,340px)` is half the panel's height, the
   // distance from its middle to its bottom edge, and has to track the 680px
   // floor on the `panel` utility. The 50% is half the message group's own
   // height, since that group is centred in the section.
@@ -47,7 +47,7 @@ const classes = {
   // is only as wide as its button, and a bar squeezed into that overlaps its
   // own readings.
   spriteBand:
-    "-translate-x-1/2 absolute top-full left-1/2 flex h-[calc(max(50dvh,340px)-24px-50%)] w-screen items-end justify-center pb-[188px] max-sm:pb-[158px] [@media(max-height:780px)]:pb-[152px]",
+    "-translate-x-1/2 absolute top-full left-1/2 flex h-[calc(max(50svh,340px)-24px-50%)] w-screen items-end justify-center pb-[188px] max-sm:pb-[158px] [@media(max-height:780px)]:pb-[152px]",
   // `w-max` keeps the bar on its natural width so the centring does not
   // squeeze it into a wrap.
   sprites: "w-max max-w-full",
