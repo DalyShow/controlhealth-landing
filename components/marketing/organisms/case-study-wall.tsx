@@ -9,9 +9,10 @@ import { ScenarioCard } from "@/components/marketing/molecules/scenario-card";
 import { Button } from "@/components/ui/button";
 import { useArrived } from "@/hooks/use-arrived";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import type { BiomarkerName } from "@/lib/biomarkers";
+import { BIOMARKER_COUNT, type BiomarkerName } from "@/lib/biomarkers";
 import {
   type CaseStudyScenario,
+  markerCount,
   scenarioResults,
 } from "@/lib/case-study-scenarios";
 import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -76,7 +77,9 @@ const STRIP_AFTER_MS = 600;
  *
  * Picking a tile pins its markers on the strip beneath the row, so the row
  * reads as many stories and the strip as the one panel they are all drawn
- * from. The first tile is picked to begin with, so the strip is never empty.
+ * from. On a phone, where forty markers are too fine to read, the strip
+ * shows only the picked tile’s markers, each wide enough to tap, and waves
+ * in afresh with each new pick. The first tile is picked to begin with, so the strip is never empty.
  *
  * It plays in once, when it arrives: the tiles rise into place one after
  * another from the left, the wave the strip makes, and the strip waves in
@@ -144,6 +147,11 @@ const classes = {
   added:
     "rounded-full border border-teal-300 bg-teal-300/15 text-teal-300 hover:bg-teal-300/25",
   announcer: "sr-only",
+  // On a phone the strip shows only the picked tile’s markers, so this says
+  // how many of the forty they are, and how to read one. Wider, the pins
+  // over the full strip say the same.
+  focusCaption:
+    "mt-4 px-[var(--gutter)] text-center font-sans text-[13px] text-white/60 leading-[1.4] md:hidden",
 } as const;
 
 /** Whether the row can scroll further back and further on. */
@@ -440,12 +448,19 @@ export const CaseStudyWall = ({
           readoutAction={readoutAction}
           readoutGlass
           {...(caseStudy ? { caseStudy } : {})}
+          {...(scenario ? { focus: scenario.markers } : {})}
           {...stripWave}
         />
         <p aria-live="polite" className={classes.announcer}>
           {announcement}
         </p>
       </div>
+      {scenario ? (
+        <p className={classes.focusCaption}>
+          {markerCount(scenario)} of {BIOMARKER_COUNT} markers · tap one to
+          read it
+        </p>
+      ) : null}
     </section>
   );
 };

@@ -2,7 +2,6 @@
 
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import {
-  BIOMARKER_COUNT,
   BIOMARKER_SYSTEMS,
   BIOMARKERS,
   type BiomarkerName,
@@ -66,8 +65,17 @@ const READOUT_MARGIN = 16;
 /** Matches `classes.readout`, for the clamp that keeps it inside the window. */
 const READOUT_WIDTH = 560;
 
-const clampToMarker = (index: number) =>
-  Math.min(Math.max(index, 0), BIOMARKER_COUNT - 1);
+/**
+ * In focus mode, roughly how many bars the whole strip is drawn with, shared
+ * out between however many markers it shows, so it keeps the density of the
+ * full strip whatever the count; and the fewest and most one marker gets.
+ */
+const FOCUS_BARS = 56;
+const FOCUS_MIN_BARS = 3;
+const FOCUS_MAX_BARS = 8;
+
+const clampToMarker = (index: number, count: number) =>
+  Math.min(Math.max(index, 0), count - 1);
 
 /**
  * How far a bar rises, and how long it waits first, given which marker is
@@ -409,6 +417,13 @@ type BiomarkerRangeProperties = {
   /** An action offered in the readout, which then takes the pointer. */
   readoutAction?: ReadoutAction;
   /**
+   * On a narrow screen, draw only these markers, in strip order, each wide
+   * enough to tap, in place of all forty squeezed into a phone. A tap reads
+   * the marker under the finger and a drag scrubs; a change of set plays the
+   * wave again. Wide screens keep the full strip.
+   */
+  focus?: readonly BiomarkerName[];
+  /**
    * Leave out to show the strip at once. Pass false to hold it hidden, and
    * true to play it in: the bars rise into place as a wave from the left,
    * and the pins follow once it has passed.
@@ -427,12 +442,17 @@ export const BiomarkerRange = ({
   caseStudy,
   readoutGlass = false,
   readoutAction,
+  focus,
   waveIn,
 }: BiomarkerRangeProperties) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const readoutRef = useRef<HTMLDivElement>(null);
-  const trackBoxRef = useRef<{ left: number; width: number } | null>(null);
+  // Where the bars run: the centre of the first, and the distance from one
+  // bar's centre to the next. The bars are spread to fill the track inside
+  // its padding, so a pointer is matched to the bar nearest it rather than
+  // to a share of the track, which drifts by the padding at wide markers.
+  const trackBoxRef = useRef<{ first: number; step: number } | null>(null);
   const activeIndexRef = useRef<number | null>(null);
   const draggingRef = useRef(false);
 
@@ -445,7 +465,30 @@ export const BiomarkerRange = ({
   const tickPlayer = useMemo(createTickPlayer, []);
 
   const isNarrow = barsPerMarker === BARS_PER_MARKER_NARROW;
-  const barCount = BIOMARKER_COUNT * barsPerMarker;
+  const focusOn = Boolean(focus) && isNarrow;
+  const focusKey = focus?.join("|") ?? "";
+  // The markers drawn: the focus set on a narrow screen, in strip order so
+  // the systems still group by colour, or all forty.
+  const markers = useMemo(() => {
+    if (!(focusOn && focusKey)) {
+      return BIOMARKERS;
+    }
+
+    const shown = new Set(focusKey.split("|"));
+
+    return BIOMARKERS.filter((marker) => shown.has(marker.name));
+  }, [focusKey, focusOn]);
+  const count = markers.length;
+  const perMarker = focusOn
+    ? Math.min(
+        Math.max(Math.round(FOCUS_BARS / count), FOCUS_MIN_BARS),
+        FOCUS_MAX_BARS
+      )
+    : barsPerMarker;
+  // Every marker in focus mode is one the case study covers, so the pins
+  // would only repeat the strip; they are left out.
+  const pinnedStudy = focusOn ? undefined : caseStudy;
+  const barCount = count * perMarker;
   const bars = useMemo(
     () => Array.from({ length: barCount }, (_, index) => index),
     [barCount]
@@ -485,19 +528,33 @@ export const BiomarkerRange = ({
   // Measuring on every move forces a synchronous layout read. The strip only
   // moves on resize, so cache the box and refresh it there.
   const measureTrack = useCallback(() => {
-    const track = trackRef.current;
+    const bars = trackRef.current?.children;
+    const first = bars?.[0]?.getBoundingClientRect();
+    const last = bars?.[bars.length - 1]?.getBoundingClientRect();
 
-    trackBoxRef.current = track
-      ? { left: track.getBoundingClientRect().left, width: track.offsetWidth }
-      : null;
+    trackBoxRef.current =
+      bars && first && last && bars.length > 1
+        ? {
+            first: first.left + first.width / 2,
+            step:
+              (last.left + last.width / 2 - (first.left + first.width / 2)) /
+              (bars.length - 1),
+          }
+        : null;
   }, []);
 
+  // Measured again whenever the bars themselves change, not only on a
+  // resize: crossing into or out of the phone layout, or a new focus set,
+  // redraws the bars after the resize has already fired.
   useEffect(() => {
-    measureTrack();
+    if (barCount > 0) {
+      measureTrack();
+    }
+
     window.addEventListener("resize", measureTrack);
 
     return () => window.removeEventListener("resize", measureTrack);
-  }, [measureTrack]);
+  }, [barCount, focusKey, measureTrack]);
 
   // Where each tested marker's pin goes: midway between the marker's two
   // middle bars, read off the laid-out bars rather than derived, because the
@@ -505,8 +562,8 @@ export const BiomarkerRange = ({
   const [pinX, setPinX] = useState<Record<number, number>>({});
 
   const measurePins = useCallback(() => {
-    setPinX(measurePinPositions(trackRef.current, caseStudy, barsPerMarker));
-  }, [barsPerMarker, caseStudy]);
+    setPinX(measurePinPositions(trackRef.current, pinnedStudy, perMarker));
+  }, [perMarker, pinnedStudy]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -544,7 +601,7 @@ export const BiomarkerRange = ({
       // derived, because the track carries padding the bar index knows
       // nothing about. Only runs on a change of marker.
       const centre = trackRef.current?.children[
-        index * barsPerMarker + Math.floor(barsPerMarker / 2)
+        index * perMarker + Math.floor(perMarker / 2)
       ] as HTMLElement | undefined;
 
       if (!centre) {
@@ -568,7 +625,7 @@ export const BiomarkerRange = ({
       // it is entitled to refuse.
       tickPlayer.play();
     },
-    [barsPerMarker, tickPlayer]
+    [perMarker, tickPlayer]
   );
 
   const clear = useCallback(() => {
@@ -576,25 +633,60 @@ export const BiomarkerRange = ({
     setActiveIndex(null);
   }, []);
 
+  // A new set of markers puts away the one being read, whose place in the
+  // strip now belongs to another.
+  useEffect(() => {
+    if (focusKey || focusOn) {
+      clear();
+    }
+  }, [clear, focusKey, focusOn]);
+
+  // A tap leaves the readout up, since a finger never leaves the strip the
+  // way a pointer does, so its action can be tapped. A tap anywhere but the
+  // strip or the readout puts it away.
+  useEffect(() => {
+    if (!(focusOn && activeIndex !== null)) {
+      return;
+    }
+
+    const handleOutside = (event: globalThis.PointerEvent) => {
+      const target = event.target;
+
+      if (
+        target instanceof Node &&
+        (rootRef.current?.contains(target) ||
+          readoutRef.current?.contains(target))
+      ) {
+        return;
+      }
+
+      clear();
+    };
+
+    document.addEventListener("pointerdown", handleOutside);
+
+    return () => document.removeEventListener("pointerdown", handleOutside);
+  }, [activeIndex, clear, focusOn]);
+
   const scrubTo = useCallback(
     (clientX: number) => {
       // Measure now if the cached box is missing or stale. `pointerenter` is
       // the usual moment, but it is not guaranteed to have happened.
-      if (!trackBoxRef.current || trackBoxRef.current.width === 0) {
+      if (!trackBoxRef.current || trackBoxRef.current.step === 0) {
         measureTrack();
       }
 
       const box = trackBoxRef.current;
 
-      if (!box || box.width === 0) {
+      if (!box || box.step === 0) {
         return;
       }
 
-      const ratio = (clientX - box.left) / box.width;
+      const bar = Math.round((clientX - box.first) / box.step);
 
-      goToMarker(clampToMarker(Math.floor(ratio * BIOMARKER_COUNT)));
+      goToMarker(clampToMarker(Math.floor(bar / perMarker), count));
     },
-    [goToMarker, measureTrack]
+    [count, goToMarker, measureTrack, perMarker]
   );
 
   const handlePointerEnter = () => measureTrack();
@@ -604,8 +696,9 @@ export const BiomarkerRange = ({
     // send hover moves in the first place, so gating on the pointer calling
     // itself a mouse bought nothing and silently killed hover whenever it
     // reported anything else — while dragging, which took a different branch,
-    // carried on working. Narrow screens step on tap instead of tracking.
-    if (isNarrow) {
+    // carried on working. Narrow screens step on tap instead of tracking,
+    // unless the strip is in focus mode and a finger is dragging along it.
+    if (isNarrow && !(focusOn && draggingRef.current)) {
       return;
     }
 
@@ -615,11 +708,14 @@ export const BiomarkerRange = ({
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     measureTrack();
 
-    if (isNarrow) {
+    // Forty markers across a phone are too fine to aim at, so a tap steps
+    // to the next. In focus mode each is wide enough to tap directly, so it
+    // reads the one under the finger, as a pointer would.
+    if (isNarrow && !focusOn) {
       goToMarker(
         activeIndexRef.current === null
           ? 0
-          : (activeIndexRef.current + 1) % BIOMARKER_COUNT
+          : (activeIndexRef.current + 1) % count
       );
       return;
     }
@@ -628,7 +724,14 @@ export const BiomarkerRange = ({
     // boundary events fire and can strand the strip mid-interaction.
     if (event.pointerType !== "mouse") {
       draggingRef.current = true;
-      event.currentTarget.setPointerCapture(event.pointerId);
+
+      // A pointer that has already gone, as a very quick tap can be, cannot
+      // be captured; the tap still reads its marker without it.
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Nothing to capture.
+      }
     }
 
     scrubTo(event.clientX);
@@ -679,14 +782,14 @@ export const BiomarkerRange = ({
       ArrowLeft: current - 1,
       ArrowDown: current - 1,
       Home: 0,
-      End: BIOMARKER_COUNT - 1,
+      End: count - 1,
     };
 
     const next = moves[event.key];
     const marker =
       activeIndexRef.current === null
         ? undefined
-        : BIOMARKERS[activeIndexRef.current];
+        : markers[activeIndexRef.current];
 
     if (readoutAction && marker && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault();
@@ -702,10 +805,10 @@ export const BiomarkerRange = ({
     }
 
     event.preventDefault();
-    goToMarker(clampToMarker(next));
+    goToMarker(clampToMarker(next, count));
   };
 
-  const active = activeIndex === null ? null : BIOMARKERS[activeIndex];
+  const active = activeIndex === null ? null : (markers[activeIndex] ?? null);
   const activeSystem = active ? BIOMARKER_SYSTEMS[active.system] : null;
   // What a screen reader hears when the value moves, as one sentence.
   const valueText = active ? describeMarker(active, caseStudy) : undefined;
@@ -744,7 +847,7 @@ export const BiomarkerRange = ({
 
       <div
         aria-label="Biomarkers a comprehensive panel can measure, and which of them a standard physical already covers"
-        aria-valuemax={BIOMARKER_COUNT}
+        aria-valuemax={count}
         aria-valuemin={1}
         aria-valuenow={(activeIndex ?? 0) + 1}
         aria-valuetext={valueText}
@@ -761,12 +864,15 @@ export const BiomarkerRange = ({
         role="slider"
         tabIndex={0}
       >
+        {/* Keyed on the set of markers, so a new set remounts the bars
+            and they wave in afresh. */}
         <div
           className={waveIn === false ? classes.trackWaiting : classes.track}
+          key={focusOn ? focusKey : "all"}
           ref={trackRef}
         >
           {bars.map((index) => {
-            const marker = BIOMARKERS[Math.floor(index / barsPerMarker)];
+            const marker = markers[Math.floor(index / perMarker)];
 
             if (!marker) {
               return null;
@@ -774,7 +880,7 @@ export const BiomarkerRange = ({
 
             const { lift, delay } = prefersReducedMotion
               ? { lift: 0, delay: 0 }
-              : liftFor(index, activeIndex, barsPerMarker);
+              : liftFor(index, activeIndex, perMarker);
 
             const style: CSSProperties = {
               height: `${BAR_HEIGHT}px`,
@@ -792,8 +898,10 @@ export const BiomarkerRange = ({
             return (
               <div
                 className={`${barClass(
-                  marker.covered,
-                  Math.floor(index / barsPerMarker) === activeIndex
+                  // Dim reads as left out, and every marker in focus mode is
+                  // in, so they are all lit there.
+                  marker.covered || focusOn,
+                  Math.floor(index / perMarker) === activeIndex
                 )} ${classes.barExit} ${waveIn ? classes.barWave : ""}`}
                 key={index}
                 style={style}
@@ -804,7 +912,7 @@ export const BiomarkerRange = ({
 
         <CaseStudyPins
           activeIndex={activeIndex}
-          caseStudy={caseStudy}
+          caseStudy={pinnedStudy}
           pinX={pinX}
           showDelayMs={waveIn ? WAVE_SPAN_MS + BAR_RISE_MS - 200 : 0}
           shown={waveIn !== false}
